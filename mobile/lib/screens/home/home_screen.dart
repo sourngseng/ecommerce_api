@@ -9,6 +9,7 @@ import '../../models/product_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
 import '../auth/login_screen.dart';
+import '../categories/categories_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -483,18 +484,22 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: const Color(0xFF111827),
                 ),
               ),
-              Row(
-                children: [
-                  Text(
-                    'See All',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
+              GestureDetector(
+                onTap: () => setState(() => _currentBottomNavIndex = 1),
+                behavior: HitTestBehavior.opaque,
+                child: Row(
+                  children: [
+                    Text(
+                      'See All',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      ),
                     ),
-                  ),
-                  const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.primary),
-                ],
+                    const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.primary),
+                  ],
+                ),
               ),
             ],
           ),
@@ -1046,6 +1051,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Alternate Tab Views (Categories, Cart, Wishlist, Account)
   Widget _buildOtherTabs(int tabIndex, dynamic user) {
+    if (tabIndex == 1) {
+      return const CategoriesScreen();
+    }
+
     final titles = ['Home', 'All Categories', 'My Shopping Cart', 'My Wishlist', 'My Account'];
     final icons = [Icons.home, Icons.grid_view_rounded, Icons.shopping_cart_rounded, Icons.favorite_rounded, Icons.person_rounded];
 
