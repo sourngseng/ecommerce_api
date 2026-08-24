@@ -163,6 +163,7 @@ Route::prefix('v1')->group(function () {
         // Admin General Settings Management
         Route::get('/settings', [AdminSettingController::class, 'index']);
         Route::put('/settings', [AdminSettingController::class, 'update']);
+        Route::post('/settings/upload', [AdminSettingController::class, 'uploadAsset']);
 
         // Admin Banners & Sliders Management
         Route::get('/banners', [AdminBannerController::class, 'index']);

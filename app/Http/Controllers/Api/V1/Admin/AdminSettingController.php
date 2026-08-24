@@ -7,6 +7,7 @@ use App\Models\Setting;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class AdminSettingController extends Controller
 {
@@ -40,5 +41,30 @@ class AdminSettingController extends Controller
         $allSettings = Setting::all()->pluck('value', 'key')->toArray();
 
         return $this->success($allSettings, 'Settings updated successfully');
+    }
+
+    public function uploadAsset(Request $request): JsonResponse
+    {
+        $request->validate([
+            'file' => ['required', 'image', 'mimes:jpeg,png,jpg,gif,svg,webp,ico', 'max:4096'],
+            'type' => ['required', 'string', 'in:logo,favicon,banner'],
+        ]);
+
+        $type = $request->input('type');
+        $path = $request->file('file')->store('settings', 'public');
+        $url = asset('storage/' . $path);
+
+        if ($type === 'logo') {
+            Setting::set('site_logo', $url, 'general');
+        } elseif ($type === 'favicon') {
+            Setting::set('site_favicon', $url, 'general');
+        }
+
+        return $this->success([
+            'url' => $url,
+            'path' => $path,
+            'type' => $type,
+            'settings' => Setting::all()->pluck('value', 'key')->toArray(),
+        ], ucfirst($type) . ' uploaded and saved successfully');
     }
 }

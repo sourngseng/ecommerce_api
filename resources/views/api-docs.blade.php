@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Commerce REST API Explorer & Live Testing Interface</title>
+    <title id="pageTitle">E-Commerce REST API Explorer & Live Testing Interface</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -131,11 +131,19 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 8px;
+            transition: background-color 0.2s ease;
+        }
+
+        .logo-group:hover {
+            background-color: rgba(99, 102, 241, 0.08);
         }
 
         .logo-badge {
-            width: 38px;
-            height: 38px;
+            width: 40px;
+            height: 40px;
             background: linear-gradient(135deg, #6366f1, #ec4899);
             border-radius: 10px;
             display: flex;
@@ -145,12 +153,44 @@
             font-size: 18px;
             color: white;
             box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .logo-badge img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .logo-title-wrap {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo-title-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .logo-title {
             font-size: 16.5px;
             font-weight: 800;
             letter-spacing: -0.3px;
+        }
+
+        .edit-brand-badge {
+            font-size: 10.5px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 4px;
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--primary);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 3px;
         }
 
         .logo-subtitle {
@@ -688,11 +728,14 @@
 
     <!-- Header Navigation -->
     <header class="top-bar">
-        <div class="logo-group">
-            <div class="logo-badge">⚡</div>
-            <div>
-                <div class="logo-title">E-Commerce REST API Explorer</div>
-                <div class="logo-subtitle">Laravel 12 &bull; Sanctum Auth &bull; 71+ Endpoints</div>
+        <div class="logo-group" onclick="openBrandingModal()" title="Click to customize App Name & Logo">
+            <div class="logo-badge" id="appLogoBadge">⚡</div>
+            <div class="logo-title-wrap">
+                <div class="logo-title-row">
+                    <div class="logo-title" id="appHeaderTitle">E-Commerce REST API Explorer</div>
+                    <span class="edit-brand-badge">✏️ Edit App</span>
+                </div>
+                <div class="logo-subtitle" id="appHeaderSubtitle">Laravel 12 &bull; Sanctum Auth &bull; 72+ Endpoints</div>
             </div>
         </div>
 
@@ -723,7 +766,7 @@
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="search-box">
-                <input type="text" id="endpointSearch" class="search-input" placeholder="Search 71+ API endpoints (e.g. settings, banner, order)..." oninput="filterEndpoints()">
+                <input type="text" id="endpointSearch" class="search-input" placeholder="Search 72+ API endpoints (e.g. settings, upload, banner)..." oninput="filterEndpoints()">
                 <div class="method-filters">
                     <button class="filter-pill active" onclick="setMethodFilter('ALL')">ALL</button>
                     <button class="filter-pill" onclick="setMethodFilter('GET')">GET</button>
@@ -750,6 +793,7 @@
 
         let authToken = localStorage.getItem('api_bearer_token') || '';
         let currentUser = JSON.parse(localStorage.getItem('api_current_user') || 'null');
+        let currentSettings = {};
         let selectedMethodFilter = 'ALL';
 
         // Theme management (dark / light mode)
@@ -813,7 +857,7 @@
                 category: 'General Settings & Banners',
                 method: 'PUT',
                 path: '/admin/settings',
-                title: 'Admin: Update System Settings (Logo, Favicon, General)',
+                title: 'Admin: Update System Settings (Logo, Favicon, App Name)',
                 desc: 'Bulk update system name, logo URL, favicon URL, contact details, currency, and copyright.',
                 auth: true,
                 role: 'Super Admin Only',
@@ -829,6 +873,19 @@
                         { key: "currency_symbol", value: "$", group: "localization" },
                         { key: "exchange_rate_khr", value: "4100", group: "localization" }
                     ]
+                }
+            },
+            {
+                id: 'admin-settings-upload',
+                category: 'General Settings & Banners',
+                method: 'POST',
+                path: '/admin/settings/upload',
+                title: 'Admin: Upload Logo, Favicon or Banner Image',
+                desc: 'Upload image file directly to server public storage (/storage/settings/...) and updates site_logo or site_favicon.',
+                auth: true,
+                role: 'Super Admin Only',
+                body: {
+                    type: "logo"
                 }
             },
             {
@@ -1699,6 +1756,241 @@
 
         let activeEndpoint = ENDPOINTS[0];
 
+        // Fetch settings from server on boot
+        async function fetchSystemSettings() {
+            try {
+                const response = await fetch(API_BASE + '/settings');
+                const data = await response.json();
+                if (data.success && data.data) {
+                    currentSettings = data.data;
+                    applyHeaderSettings(data.data);
+                }
+            } catch (e) {
+                console.warn('Could not load dynamic settings:', e);
+            }
+        }
+
+        function applyHeaderSettings(settings) {
+            const titleEl = document.getElementById('appHeaderTitle');
+            const subEl = document.getElementById('appHeaderSubtitle');
+            const logoBadge = document.getElementById('appLogoBadge');
+            const pageTitle = document.getElementById('pageTitle');
+
+            if (settings.site_title) {
+                if (titleEl) titleEl.innerText = settings.site_title;
+                if (pageTitle) pageTitle.innerText = settings.site_title + ' - REST API Explorer';
+            }
+
+            if (settings.site_tagline && subEl) {
+                subEl.innerText = settings.site_tagline;
+            }
+
+            if (settings.site_logo && logoBadge) {
+                logoBadge.innerHTML = `<img src="${settings.site_logo}" alt="App Logo" style="width:100%; height:100%; object-fit:contain;" onerror="this.onerror=null; this.parentElement.innerText='⚡';">`;
+            }
+        }
+
+        // Open Branding & Logo Customizer Modal
+        async function openBrandingModal() {
+            const isAdmin = currentUser && currentUser.role === 'admin';
+            const currentTitle = currentSettings.site_title || (document.getElementById('appHeaderTitle')?.innerText || 'E-Commerce REST API Explorer');
+            const currentTagline = currentSettings.site_tagline || 'Best online shopping experience across Cambodia';
+            const currentLogo = currentSettings.site_logo || '';
+            const currentFavicon = currentSettings.site_favicon || '';
+
+            const isDark = currentTheme === 'dark';
+
+            const { value: formValues } = await Swal.fire({
+                title: '⚙️ App Branding & Logo Customizer',
+                html: `
+                    <div style="text-align:left; font-size:13px; display:flex; flex-direction:column; gap:14px; margin-top:10px;">
+                        ${!isAdmin ? `
+                            <div style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); color:#f59e0b; padding:8px 12px; border-radius:6px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
+                                <span>⚠️ Admin login required to save settings permanently.</span>
+                                <button type="button" onclick="quickLogin('admin@ecommerce.test', 'Super Admin'); Swal.close();" style="background:#f59e0b; color:black; border:none; padding:4px 8px; border-radius:4px; font-weight:700; cursor:pointer; font-size:11px;">1-Click Admin</button>
+                            </div>
+                        ` : ''}
+
+                        <div>
+                            <label style="font-weight:700; color:var(--text-main); font-size:12px; margin-bottom:4px; display:block;">App / Website Name:</label>
+                            <input type="text" id="swalAppName" class="swal2-input" value="${currentTitle}" placeholder="e.g. Cambodia Premier E-Commerce" style="margin:0; width:100%; font-size:13px; padding:10px;">
+                        </div>
+
+                        <div>
+                            <label style="font-weight:700; color:var(--text-main); font-size:12px; margin-bottom:4px; display:block;">App Tagline / Subtitle:</label>
+                            <input type="text" id="swalAppTagline" class="swal2-input" value="${currentTagline}" placeholder="e.g. No. 1 Marketplace in Cambodia" style="margin:0; width:100%; font-size:13px; padding:10px;">
+                        </div>
+
+                        <div style="border:1px dashed var(--border-color); padding:12px; border-radius:8px; background:var(--bg-input);">
+                            <label style="font-weight:700; color:var(--text-main); font-size:12px; margin-bottom:4px; display:block;">Logo Image Upload:</label>
+                            <input type="file" id="swalLogoFile" accept="image/*" style="font-size:12px; color:var(--text-main); width:100%; margin-top:4px;">
+                            <div style="font-size:11px; color:var(--text-dim); margin-top:6px;">Or paste Logo Image URL:</div>
+                            <input type="text" id="swalLogoUrl" class="swal2-input" value="${currentLogo}" placeholder="https://example.com/logo.png" style="margin:4px 0 0 0; width:100%; font-size:12px; padding:8px;">
+                        </div>
+
+                        <div style="border:1px dashed var(--border-color); padding:12px; border-radius:8px; background:var(--bg-input);">
+                            <label style="font-weight:700; color:var(--text-main); font-size:12px; margin-bottom:4px; display:block;">Favicon Image Upload / URL:</label>
+                            <input type="file" id="swalFaviconFile" accept="image/*" style="font-size:12px; color:var(--text-main); width:100%; margin-top:4px;">
+                            <input type="text" id="swalFaviconUrl" class="swal2-input" value="${currentFavicon}" placeholder="https://example.com/favicon.ico" style="margin:4px 0 0 0; width:100%; font-size:12px; padding:8px;">
+                        </div>
+                    </div>
+                `,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: '💾 Save App Branding',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#6366f1',
+                cancelButtonColor: '#6b7280',
+                background: isDark ? '#111827' : '#ffffff',
+                color: isDark ? '#f3f4f6' : '#0f172a',
+                preConfirm: () => {
+                    return {
+                        name: document.getElementById('swalAppName').value.trim(),
+                        tagline: document.getElementById('swalAppTagline').value.trim(),
+                        logoFile: document.getElementById('swalLogoFile').files[0],
+                        logoUrl: document.getElementById('swalLogoUrl').value.trim(),
+                        faviconFile: document.getElementById('swalFaviconFile').files[0],
+                        faviconUrl: document.getElementById('swalFaviconUrl').value.trim(),
+                    };
+                }
+            });
+
+            if (formValues) {
+                await saveBrandingSettings(formValues);
+            }
+        }
+
+        async function saveBrandingSettings(values) {
+            if (!authToken) {
+                // Apply locally only
+                applyHeaderSettings({
+                    site_title: values.name,
+                    site_tagline: values.tagline,
+                    site_logo: values.logoUrl,
+                });
+                showToast('info', 'Updated Temporarily', 'Login as Admin to persist settings in the database.');
+                return;
+            }
+
+            try {
+                Swal.fire({
+                    title: 'Saving Branding...',
+                    text: 'Uploading assets and updating database records.',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading(),
+                    background: currentTheme === 'dark' ? '#111827' : '#ffffff',
+                    color: currentTheme === 'dark' ? '#f3f4f6' : '#0f172a',
+                });
+
+                let uploadedLogoUrl = values.logoUrl;
+                let uploadedFaviconUrl = values.faviconUrl;
+
+                // 1. If logo file uploaded, send to /admin/settings/upload
+                if (values.logoFile) {
+                    const formData = new FormData();
+                    formData.append('file', values.logoFile);
+                    formData.append('type', 'logo');
+
+                    const uploadRes = await fetch(API_BASE + '/admin/settings/upload', {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Authorization': `Bearer ${authToken}`
+                        },
+                        body: formData
+                    });
+                    const uploadData = await uploadRes.json();
+                    if (uploadData.success && uploadData.data && uploadData.data.url) {
+                        uploadedLogoUrl = uploadData.data.url;
+                    }
+                }
+
+                // 2. If favicon file uploaded
+                if (values.faviconFile) {
+                    const formData = new FormData();
+                    formData.append('file', values.faviconFile);
+                    formData.append('type', 'favicon');
+
+                    const uploadRes = await fetch(API_BASE + '/admin/settings/upload', {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Authorization': `Bearer ${authToken}`
+                        },
+                        body: formData
+                    });
+                    const uploadData = await uploadRes.json();
+                    if (uploadData.success && uploadData.data && uploadData.data.url) {
+                        uploadedFaviconUrl = uploadData.data.url;
+                    }
+                }
+
+                // 3. Update site_title, site_tagline, site_logo, site_favicon in settings table
+                const settingsPayload = {
+                    settings: [
+                        { key: "site_title", value: values.name, group: "general" },
+                        { key: "site_tagline", value: values.tagline, group: "general" }
+                    ]
+                };
+
+                if (uploadedLogoUrl) {
+                    settingsPayload.settings.push({ key: "site_logo", value: uploadedLogoUrl, group: "general" });
+                }
+                if (uploadedFaviconUrl) {
+                    settingsPayload.settings.push({ key: "site_favicon", value: uploadedFaviconUrl, group: "general" });
+                }
+
+                const response = await fetch(API_BASE + '/admin/settings', {
+                    method: 'PUT',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(settingsPayload)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    currentSettings = data.data;
+                    applyHeaderSettings(data.data);
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'App Branding Updated!',
+                        html: `<div style="font-size:13px; line-height:1.6; margin-top:8px;">
+                            <b>App Name:</b> ${escapeHtml(values.name)}<br>
+                            <b>Tagline:</b> ${escapeHtml(values.tagline)}<br>
+                            <span style="color:#10b981; font-size:12px;">✅ Saved permanently to database and live in header.</span>
+                        </div>`,
+                        confirmButtonColor: '#6366f1',
+                        background: currentTheme === 'dark' ? '#111827' : '#ffffff',
+                        color: currentTheme === 'dark' ? '#f3f4f6' : '#0f172a',
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Update Failed',
+                        text: data.message || 'Could not update settings',
+                        confirmButtonColor: '#6366f1',
+                        background: currentTheme === 'dark' ? '#111827' : '#ffffff',
+                        color: currentTheme === 'dark' ? '#f3f4f6' : '#0f172a',
+                    });
+                }
+
+            } catch (err) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: err.message,
+                    confirmButtonColor: '#6366f1',
+                    background: currentTheme === 'dark' ? '#111827' : '#ffffff',
+                    color: currentTheme === 'dark' ? '#f3f4f6' : '#0f172a',
+                });
+            }
+        }
+
         function setMethodFilter(method) {
             selectedMethodFilter = method;
             document.querySelectorAll('.filter-pill').forEach(btn => {
@@ -2216,6 +2508,7 @@
         }
 
         // Initialize UI
+        fetchSystemSettings();
         renderNavigation(ENDPOINTS);
         renderMainContent();
         updateTokenBadge();

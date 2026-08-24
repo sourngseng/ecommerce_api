@@ -124,4 +124,27 @@ class SettingAndBannerTest extends TestCase
 
         $this->assertDatabaseMissing('banners', ['id' => $bannerId]);
     }
+
+    public function test_admin_can_upload_logo_asset(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $file = \Illuminate\Http\UploadedFile::fake()->image('custom-logo.png', 300, 100);
+
+        $response = $this->actingAs($admin)->postJson('/api/v1/admin/settings/upload', [
+            'file' => $file,
+            'type' => 'logo',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'data' => [
+                    'type' => 'logo',
+                ],
+            ]);
+
+        $this->assertNotEmpty(Setting::get('site_logo'));
+    }
 }
