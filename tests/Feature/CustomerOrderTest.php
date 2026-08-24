@@ -23,6 +23,7 @@ class CustomerOrderTest extends TestCase
         $product = Product::factory()->create([
             'vendor_id' => $vendor->id,
             'price' => 100.00,
+            'discount_price' => null,
             'stock' => 10,
             'status' => 'active',
         ]);

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,12 +7,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        :root {
+        /* CSS Variables - Dark Mode (Default) */
+        :root, [data-theme="dark"] {
             --bg-main: #0b0f19;
             --bg-card: #111827;
             --bg-input: #1f2937;
             --bg-sidebar: #0e1526;
+            --bg-panel: #0d1424;
+            --bg-code: #060913;
             --border-color: #1f293d;
             --border-hover: #374151;
             --text-main: #f3f4f6;
@@ -21,20 +25,81 @@
             --primary: #6366f1;
             --primary-hover: #4f46e5;
             --primary-glow: rgba(99, 102, 241, 0.25);
+            --header-bg: rgba(14, 21, 38, 0.85);
+
             --method-get: #10b981;
             --method-post: #3b82f6;
             --method-put: #f59e0b;
             --method-delete: #ef4444;
+
+            --badge-get-bg: rgba(16, 185, 129, 0.15);
+            --badge-get-text: #34d399;
+            --badge-post-bg: rgba(59, 130, 246, 0.15);
+            --badge-post-text: #60a5fa;
+            --badge-put-bg: rgba(245, 158, 11, 0.15);
+            --badge-put-text: #fbbf24;
+            --badge-delete-bg: rgba(239, 68, 68, 0.15);
+            --badge-delete-text: #f87171;
+
             --status-success: #10b981;
             --status-error: #ef4444;
-            --status-warn: #f59e0b;
-            --sidebar-width: 320px;
+            --sidebar-width: 330px;
+            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            --json-key: #93c5fd;
+            --json-string: #86efac;
+            --json-number: #fcd34d;
+            --json-boolean: #c084fc;
+            --json-null: #9ca3af;
+        }
+
+        /* CSS Variables - Light Mode */
+        [data-theme="light"] {
+            --bg-main: #f8fafc;
+            --bg-card: #ffffff;
+            --bg-input: #f1f5f9;
+            --bg-sidebar: #ffffff;
+            --bg-panel: #f8fafc;
+            --bg-code: #0f172a;
+            --border-color: #e2e8f0;
+            --border-hover: #cbd5e1;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --text-dim: #64748b;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-glow: rgba(79, 70, 229, 0.15);
+            --header-bg: rgba(255, 255, 255, 0.9);
+
+            --method-get: #059669;
+            --method-post: #2563eb;
+            --method-put: #d97706;
+            --method-delete: #dc2626;
+
+            --badge-get-bg: #ecfdf5;
+            --badge-get-text: #059669;
+            --badge-post-bg: #eff6ff;
+            --badge-post-text: #2563eb;
+            --badge-put-bg: #fffbeb;
+            --badge-put-text: #d97706;
+            --badge-delete-bg: #fef2f2;
+            --badge-delete-text: #dc2626;
+
+            --status-success: #059669;
+            --status-error: #dc2626;
+            --sidebar-width: 330px;
+            --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            --json-key: #93c5fd;
+            --json-string: #86efac;
+            --json-number: #fcd34d;
+            --json-boolean: #c084fc;
+            --json-null: #9ca3af;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
         }
 
         body {
@@ -50,7 +115,7 @@
         /* Top Navigation Bar */
         header.top-bar {
             height: 68px;
-            background-color: rgba(14, 21, 38, 0.85);
+            background-color: var(--header-bg);
             backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border-color);
             display: flex;
@@ -79,53 +144,53 @@
             font-weight: 800;
             font-size: 18px;
             color: white;
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
         }
 
         .logo-title {
-            font-size: 17px;
-            font-weight: 700;
+            font-size: 16.5px;
+            font-weight: 800;
             letter-spacing: -0.3px;
         }
 
         .logo-subtitle {
             font-size: 12px;
-            color: var(--text-muted);
+            color: var(--text-dim);
             font-weight: 500;
         }
 
         .auth-bar {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
         .quick-login-label {
-            font-size: 12px;
+            font-size: 11px;
             color: var(--text-dim);
-            font-weight: 600;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.6px;
         }
 
         .quick-btn {
             background: var(--bg-input);
             border: 1px solid var(--border-color);
             color: var(--text-main);
-            padding: 6px 12px;
+            padding: 6px 11px;
             border-radius: 6px;
-            font-size: 12px;
+            font-size: 11.5px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
         }
 
         .quick-btn:hover {
             border-color: var(--primary);
-            background: #283548;
+            color: var(--primary);
             transform: translateY(-1px);
         }
 
@@ -145,7 +210,7 @@
         .token-status.unauthenticated {
             background: rgba(239, 68, 68, 0.1);
             border-color: rgba(239, 68, 68, 0.25);
-            color: #f87171;
+            color: #ef4444;
         }
 
         .btn-clear-token {
@@ -154,10 +219,31 @@
             color: var(--text-dim);
             cursor: pointer;
             font-size: 14px;
-            padding: 2px 4px;
+            padding: 0 4px;
         }
         .btn-clear-token:hover {
             color: var(--status-error);
+        }
+
+        /* Theme Switcher Button */
+        .theme-toggle-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            user-select: none;
+        }
+
+        .theme-toggle-btn:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-1px);
         }
 
         /* App Layout */
@@ -180,8 +266,11 @@
         }
 
         .search-box {
-            padding: 16px;
+            padding: 14px 14px 10px;
             border-bottom: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .search-input {
@@ -189,17 +278,42 @@
             background-color: var(--bg-input);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 10px 14px;
-            color: white;
-            font-size: 13px;
+            padding: 9px 12px;
+            color: var(--text-main);
+            font-size: 12.5px;
             outline: none;
             font-family: inherit;
-            transition: border 0.2s;
         }
 
         .search-input:focus {
             border-color: var(--primary);
             box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+
+        /* Method Filter Pills */
+        .method-filters {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .filter-pill {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-dim);
+            font-size: 10.5px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+        }
+
+        .filter-pill:hover, .filter-pill.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
         }
 
         .nav-sections {
@@ -214,7 +328,7 @@
             font-weight: 700;
             color: var(--text-dim);
             letter-spacing: 0.8px;
-            padding: 12px 8px 6px;
+            padding: 14px 8px 6px;
             display: flex;
             align-items: center;
             gap: 6px;
@@ -224,25 +338,24 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 10px;
+            padding: 7px 10px;
             border-radius: 6px;
-            font-size: 12.5px;
+            font-size: 12px;
             color: var(--text-muted);
             text-decoration: none;
             cursor: pointer;
-            transition: all 0.15s ease;
             margin-bottom: 2px;
         }
 
         .nav-item:hover {
             background-color: var(--bg-card);
-            color: white;
+            color: var(--text-main);
         }
 
         .nav-item.active {
             background-color: rgba(99, 102, 241, 0.15);
-            color: white;
-            font-weight: 600;
+            color: var(--text-main);
+            font-weight: 700;
             border-left: 3px solid var(--primary);
         }
 
@@ -257,10 +370,10 @@
             text-align: center;
         }
 
-        .badge-get { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-        .badge-post { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
-        .badge-put { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
-        .badge-delete { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .badge-get { background: var(--badge-get-bg); color: var(--badge-get-text); border: 1px solid rgba(16, 185, 129, 0.2); }
+        .badge-post { background: var(--badge-post-bg); color: var(--badge-post-text); border: 1px solid rgba(59, 130, 246, 0.2); }
+        .badge-put { background: var(--badge-put-bg); color: var(--badge-put-text); border: 1px solid rgba(245, 158, 11, 0.2); }
+        .badge-delete { background: var(--badge-delete-bg); color: var(--badge-delete-text); border: 1px solid rgba(239, 68, 68, 0.2); }
 
         .nav-item-path {
             flex: 1;
@@ -275,11 +388,11 @@
         main.main-content {
             flex: 1;
             overflow-y: auto;
-            padding: 28px 36px;
+            padding: 24px 32px;
             background-color: var(--bg-main);
             display: flex;
             flex-direction: column;
-            gap: 24px;
+            gap: 20px;
         }
 
         .endpoint-card {
@@ -287,7 +400,7 @@
             border: 1px solid var(--border-color);
             border-radius: 12px;
             padding: 24px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            box-shadow: var(--card-shadow);
         }
 
         .endpoint-header {
@@ -321,12 +434,12 @@
         .endpoint-url-text {
             font-family: 'JetBrains Mono', monospace;
             font-size: 16px;
-            font-weight: 600;
-            color: #ffffff;
+            font-weight: 700;
+            color: var(--text-main);
         }
 
         .endpoint-desc {
-            font-size: 14px;
+            font-size: 13.5px;
             color: var(--text-muted);
         }
 
@@ -343,8 +456,8 @@
             padding: 3px 8px;
             border-radius: 6px;
             background: rgba(99, 102, 241, 0.15);
-            color: #a5b4fc;
-            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: #818cf8;
+            border: 1px solid rgba(99, 102, 241, 0.25);
         }
 
         .auth-tag {
@@ -353,14 +466,14 @@
             padding: 3px 8px;
             border-radius: 6px;
             background: rgba(245, 158, 11, 0.15);
-            color: #fcd34d;
-            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.25);
         }
 
         .auth-tag.public {
             background: rgba(16, 185, 129, 0.15);
-            color: #6ee7b7;
-            border-color: rgba(16, 185, 129, 0.3);
+            color: #10b981;
+            border-color: rgba(16, 185, 129, 0.25);
         }
 
         /* 2-Column Split: Request & Response */
@@ -378,7 +491,7 @@
         }
 
         .panel-box {
-            background-color: var(--bg-sidebar);
+            background-color: var(--bg-panel);
             border: 1px solid var(--border-color);
             border-radius: 8px;
             padding: 16px;
@@ -388,11 +501,11 @@
         }
 
         .panel-title {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
-            color: var(--text-muted);
+            color: var(--text-dim);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.6px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -416,7 +529,7 @@
             border: 1px solid var(--border-color);
             border-radius: 6px;
             padding: 8px 12px;
-            color: white;
+            color: var(--text-main);
             font-size: 13px;
             font-family: 'JetBrains Mono', monospace;
             outline: none;
@@ -428,7 +541,7 @@
         }
 
         .json-editor {
-            background-color: #080d1a;
+            background-color: var(--bg-code);
             border: 1px solid var(--border-color);
             border-radius: 6px;
             padding: 12px;
@@ -467,7 +580,6 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            transition: all 0.2s;
             box-shadow: 0 4px 14px var(--primary-glow);
         }
 
@@ -486,22 +598,21 @@
             background: var(--bg-input);
             color: var(--text-muted);
             border: 1px solid var(--border-color);
-            padding: 8px 14px;
+            padding: 6px 12px;
             border-radius: 6px;
-            font-size: 12px;
+            font-size: 11.5px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.15s;
         }
 
         .btn-secondary:hover {
-            color: white;
+            color: var(--text-main);
             border-color: var(--border-hover);
         }
 
         /* Response View Box */
         .response-box {
-            background-color: #060913;
+            background-color: var(--bg-code);
             border: 1px solid var(--border-color);
             border-radius: 6px;
             padding: 14px;
@@ -517,7 +628,7 @@
         }
 
         .status-badge-res {
-            font-size: 12px;
+            font-size: 11.5px;
             font-weight: 700;
             padding: 3px 8px;
             border-radius: 4px;
@@ -528,11 +639,11 @@
         .status-5xx { background: rgba(239, 68, 68, 0.2); color: #f87171; }
 
         /* JSON Syntax Highlighting */
-        .json-key { color: #93c5fd; }
-        .json-string { color: #86efac; }
-        .json-number { color: #fcd34d; }
-        .json-boolean { color: #c084fc; }
-        .json-null { color: #9ca3af; }
+        .json-key { color: var(--json-key); }
+        .json-string { color: var(--json-string); }
+        .json-number { color: var(--json-number); }
+        .json-boolean { color: var(--json-boolean); }
+        .json-null { color: var(--json-null); }
 
         .spinner {
             border: 2px solid rgba(255, 255, 255, 0.2);
@@ -549,7 +660,7 @@
         }
 
         .curl-box {
-            background: #0d1322;
+            background: var(--bg-code);
             border: 1px dashed var(--border-color);
             padding: 10px 14px;
             border-radius: 6px;
@@ -578,16 +689,21 @@
         </div>
 
         <div class="auth-bar">
-            <span class="quick-login-label">Quick 1-Click Login:</span>
+            <span class="quick-login-label">1-Click Login:</span>
             <button class="quick-btn" onclick="quickLogin('admin@ecommerce.test', 'Super Admin')">👑 Admin</button>
-            <button class="quick-btn" onclick="quickLogin('sokha@phnompenhelectronics.com', 'Sokha (Electronics Vendor)')">🏪 Vendor Sokha</button>
-            <button class="quick-btn" onclick="quickLogin('bopha@angkorfashion.com', 'Bopha (Fashion Vendor)')">👗 Vendor Bopha</button>
-            <button class="quick-btn" onclick="quickLogin('rithy.sok@example.com', 'Rithy Sok (Customer)')">👤 Customer Rithy</button>
+            <button class="quick-btn" onclick="quickLogin('sokha@phnompenhelectronics.com', 'Sokha (Electronics)')">🏪 Sokha</button>
+            <button class="quick-btn" onclick="quickLogin('bopha@angkorfashion.com', 'Bopha (Fashion)')">👗 Bopha</button>
+            <button class="quick-btn" onclick="quickLogin('rithy.sok@example.com', 'Rithy Sok (Customer)')">👤 Rithy</button>
 
             <div id="tokenBadge" class="token-status unauthenticated">
                 <span id="tokenStatusText">Unauthenticated</span>
                 <button class="btn-clear-token" title="Clear Token" onclick="clearToken()">&times;</button>
             </div>
+
+            <!-- Dark / Light Mode Toggle Button -->
+            <button class="theme-toggle-btn" id="themeToggleBtn" title="Toggle Dark / Light Mode" onclick="toggleTheme()">
+                🌙
+            </button>
         </div>
     </header>
 
@@ -596,6 +712,13 @@
         <aside class="sidebar">
             <div class="search-box">
                 <input type="text" id="endpointSearch" class="search-input" placeholder="Search 62 API endpoints (e.g. cart, order, review)..." oninput="filterEndpoints()">
+                <div class="method-filters">
+                    <button class="filter-pill active" onclick="setMethodFilter('ALL')">ALL</button>
+                    <button class="filter-pill" onclick="setMethodFilter('GET')">GET</button>
+                    <button class="filter-pill" onclick="setMethodFilter('POST')">POST</button>
+                    <button class="filter-pill" onclick="setMethodFilter('PUT')">PUT</button>
+                    <button class="filter-pill" onclick="setMethodFilter('DELETE')">DEL</button>
+                </div>
             </div>
 
             <div class="nav-sections" id="navContainer">
@@ -615,6 +738,27 @@
 
         let authToken = localStorage.getItem('api_bearer_token') || '';
         let currentUser = JSON.parse(localStorage.getItem('api_current_user') || 'null');
+        let selectedMethodFilter = 'ALL';
+
+        // Theme management (dark / light mode)
+        let currentTheme = localStorage.getItem('api_docs_theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        applyTheme(currentTheme);
+
+        function applyTheme(theme) {
+            currentTheme = theme;
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('api_docs_theme', theme);
+            const btn = document.getElementById('themeToggleBtn');
+            if (btn) {
+                btn.innerHTML = theme === 'dark' ? '🌙' : '☀️';
+                btn.setAttribute('title', theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode');
+            }
+        }
+
+        function toggleTheme() {
+            const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            applyTheme(nextTheme);
+        }
 
         const ENDPOINTS = [
             // 1. Authentication
@@ -1412,6 +1556,14 @@
 
         let activeEndpoint = ENDPOINTS[0];
 
+        function setMethodFilter(method) {
+            selectedMethodFilter = method;
+            document.querySelectorAll('.filter-pill').forEach(btn => {
+                btn.classList.toggle('active', btn.innerText === (method === 'DELETE' ? 'DEL' : method));
+            });
+            filterEndpoints();
+        }
+
         function renderNavigation(items) {
             const container = document.getElementById('navContainer');
             container.innerHTML = '';
@@ -1421,6 +1573,11 @@
                 if (!categories[ep.category]) categories[ep.category] = [];
                 categories[ep.category].push(ep);
             });
+
+            if (Object.keys(categories).length === 0) {
+                container.innerHTML = '<div style="padding:20px; color:var(--text-dim); text-align:center; font-size:12px;">No endpoints match search filter</div>';
+                return;
+            }
 
             for (const cat in categories) {
                 const title = document.createElement('div');
@@ -1450,18 +1607,22 @@
 
         function filterEndpoints() {
             const query = document.getElementById('endpointSearch').value.toLowerCase().trim();
-            const filtered = ENDPOINTS.filter(ep => 
-                ep.path.toLowerCase().includes(query) ||
-                ep.title.toLowerCase().includes(query) ||
-                ep.method.toLowerCase().includes(query) ||
-                ep.category.toLowerCase().includes(query)
-            );
+            const filtered = ENDPOINTS.filter(ep => {
+                const matchesMethod = (selectedMethodFilter === 'ALL' || ep.method === selectedMethodFilter);
+                const matchesQuery = !query || (
+                    ep.path.toLowerCase().includes(query) ||
+                    ep.title.toLowerCase().includes(query) ||
+                    ep.method.toLowerCase().includes(query) ||
+                    ep.category.toLowerCase().includes(query)
+                );
+                return matchesMethod && matchesQuery;
+            });
             renderNavigation(filtered);
         }
 
         function selectEndpoint(ep) {
             activeEndpoint = ep;
-            renderNavigation(ENDPOINTS);
+            filterEndpoints();
             renderMainContent();
         }
 
@@ -1490,7 +1651,7 @@
                 for (const q in ep.queryParams) {
                     queryParamsHtml += `
                         <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
-                            <span style="font-family:'JetBrains Mono'; font-size:12px; min-width:100px; color:#cbd5e1;">${q}</span>
+                            <span style="font-family:'JetBrains Mono'; font-size:12px; min-width:100px; color:var(--text-muted);">${q}</span>
                             <input type="text" class="input-text" id="query_${q}" value="${ep.queryParams[q]}" placeholder="Value">
                         </div>
                     `;
@@ -1547,7 +1708,7 @@
                                 <button class="btn-send" id="btnExecute" onclick="executeActiveRequest()">
                                     <span>Send Request</span>
                                 </button>
-                                <span style="font-size:11px; color:var(--text-dim);">Live Backend Request</span>
+                                <span style="font-size:11px; color:var(--text-dim);">Live API Execution</span>
                             </div>
                         </div>
 
@@ -1563,7 +1724,8 @@
 
                             <div class="response-box" id="responseViewer">// Click "Send Request" to test this endpoint live against the API backend...</div>
 
-                            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:4px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+                                <button class="btn-secondary" onclick="clearResponseViewer()">Clear</button>
                                 <button class="btn-secondary" onclick="copyResponse()">Copy JSON</button>
                             </div>
                         </div>
@@ -1574,14 +1736,31 @@
             updateCurlPreview();
         }
 
+        function clearResponseViewer() {
+            const viewer = document.getElementById('responseViewer');
+            const resStatus = document.getElementById('resStatus');
+            const resTime = document.getElementById('resTime');
+            if (viewer) viewer.innerText = '// Response cleared.';
+            if (resStatus) resStatus.innerHTML = '';
+            if (resTime) resTime.innerText = '';
+        }
+
         function formatJsonBody() {
             const editor = document.getElementById('requestBodyEditor');
             if (editor) {
                 try {
                     const parsed = JSON.parse(editor.value);
                     editor.value = JSON.stringify(parsed, null, 2);
+                    showToast('success', 'JSON formatted successfully');
                 } catch(e) {
-                    alert('Invalid JSON: ' + e.message);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Invalid JSON Format',
+                        text: e.message,
+                        background: currentTheme === 'dark' ? '#111827' : '#ffffff',
+                        color: currentTheme === 'dark' ? '#f3f4f6' : '#0f172a',
+                        confirmButtonColor: '#6366f1'
+                    });
                 }
             }
         }
@@ -1720,6 +1899,26 @@
             }
         }
 
+        function showToast(icon, title, text = '') {
+            const isDark = currentTheme === 'dark';
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: icon,
+                title: title,
+                text: text,
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                background: isDark ? '#111827' : '#ffffff',
+                color: isDark ? '#f3f4f6' : '#0f172a',
+                didOpen: (toast) => {
+                    toast.onmouseenter = Swal.stopTimer;
+                    toast.onmouseleave = Swal.resumeTimer;
+                }
+            });
+        }
+
         async function quickLogin(email, roleLabel) {
             try {
                 const response = await fetch(API_BASE + '/auth/login', {
@@ -1730,12 +1929,39 @@
                 const data = await response.json();
                 if (data.success && data.data && data.data.access_token) {
                     setAuthToken(data.data.access_token, data.data.user);
-                    alert(`✅ Logged in as ${roleLabel} (${email})!\nBearer token is now active for all authenticated API requests.`);
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: `Authenticated as ${roleLabel}!`,
+                        html: `<div style="font-size:13px; margin-top:8px; line-height:1.6;">
+                            <b>User:</b> ${data.data.user.name} (${email})<br>
+                            <b>Role:</b> <span style="text-transform:capitalize; color:#6366f1; font-weight:700;">${data.data.user.role}</span><br>
+                            <span style="color:#10b981; font-size:12px; margin-top:6px; display:inline-block;">⚡ Bearer Token is now active for all API requests.</span>
+                        </div>`,
+                        background: currentTheme === 'dark' ? '#111827' : '#ffffff',
+                        color: currentTheme === 'dark' ? '#f3f4f6' : '#0f172a',
+                        confirmButtonColor: '#6366f1',
+                        confirmButtonText: 'Start Testing Endpoints'
+                    });
                 } else {
-                    alert('Login failed: ' + (data.message || 'Check database seeders'));
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Login Failed',
+                        text: data.message || 'Check database seeders.',
+                        background: currentTheme === 'dark' ? '#111827' : '#ffffff',
+                        color: currentTheme === 'dark' ? '#f3f4f6' : '#0f172a',
+                        confirmButtonColor: '#6366f1'
+                    });
                 }
             } catch (err) {
-                alert('Connection error: ' + err.message);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Connection Error',
+                    text: err.message,
+                    background: currentTheme === 'dark' ? '#111827' : '#ffffff',
+                    color: currentTheme === 'dark' ? '#f3f4f6' : '#0f172a',
+                    confirmButtonColor: '#6366f1'
+                });
             }
         }
 
@@ -1753,6 +1979,7 @@
             localStorage.removeItem('api_bearer_token');
             localStorage.removeItem('api_current_user');
             updateTokenBadge();
+            showToast('info', 'Logged Out', 'Bearer token cleared.');
         }
 
         function updateTokenBadge() {
@@ -1777,7 +2004,7 @@
             const viewer = document.getElementById('responseViewer');
             if (viewer) {
                 navigator.clipboard.writeText(viewer.innerText);
-                alert('Copied response JSON to clipboard!');
+                showToast('success', 'Copied to Clipboard!', 'Response JSON copied.');
             }
         }
 

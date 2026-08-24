@@ -12,7 +12,7 @@ class ApiDocsTest extends TestCase
 
         $response->assertStatus(200)
             ->assertSee('E-Commerce REST API Explorer')
-            ->assertSee('Quick 1-Click Login');
+            ->assertSee('1-Click Login');
     }
 
     public function test_docs_alias_route_is_accessible(): void
