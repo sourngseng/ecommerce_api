@@ -213,16 +213,24 @@
             color: #ef4444;
         }
 
-        .btn-clear-token {
-            background: transparent;
-            border: none;
-            color: var(--text-dim);
+        .logout-btn {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11.5px;
+            font-weight: 700;
             cursor: pointer;
-            font-size: 14px;
-            padding: 0 4px;
+            display: none;
+            align-items: center;
+            gap: 5px;
         }
-        .btn-clear-token:hover {
-            color: var(--status-error);
+
+        .logout-btn:hover {
+            background: #ef4444;
+            color: white;
+            transform: translateY(-1px);
         }
 
         /* Theme Switcher Button */
@@ -684,7 +692,7 @@
             <div class="logo-badge">⚡</div>
             <div>
                 <div class="logo-title">E-Commerce REST API Explorer</div>
-                <div class="logo-subtitle">Laravel 12 &bull; Sanctum Auth &bull; 62 Endpoints</div>
+                <div class="logo-subtitle">Laravel 12 &bull; Sanctum Auth &bull; 71+ Endpoints</div>
             </div>
         </div>
 
@@ -697,8 +705,12 @@
 
             <div id="tokenBadge" class="token-status unauthenticated">
                 <span id="tokenStatusText">Unauthenticated</span>
-                <button class="btn-clear-token" title="Clear Token" onclick="clearToken()">&times;</button>
             </div>
+
+            <!-- Logout Button -->
+            <button class="logout-btn" id="btnLogout" onclick="confirmLogout()">
+                🚪 Logout
+            </button>
 
             <!-- Dark / Light Mode Toggle Button -->
             <button class="theme-toggle-btn" id="themeToggleBtn" title="Toggle Dark / Light Mode" onclick="toggleTheme()">
@@ -711,7 +723,7 @@
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="search-box">
-                <input type="text" id="endpointSearch" class="search-input" placeholder="Search 62 API endpoints (e.g. cart, order, review)..." oninput="filterEndpoints()">
+                <input type="text" id="endpointSearch" class="search-input" placeholder="Search 71+ API endpoints (e.g. settings, banner, order)..." oninput="filterEndpoints()">
                 <div class="method-filters">
                     <button class="filter-pill active" onclick="setMethodFilter('ALL')">ALL</button>
                     <button class="filter-pill" onclick="setMethodFilter('GET')">GET</button>
@@ -761,7 +773,138 @@
         }
 
         const ENDPOINTS = [
-            // 1. Authentication
+            // 1. General Settings & System (Logo, Favicon, Banners, Sliders)
+            {
+                id: 'settings-get',
+                category: 'General Settings & Banners',
+                method: 'GET',
+                path: '/settings',
+                title: 'Get General System Settings',
+                desc: 'Retrieve public system configurations: Logo, Favicon, Title, Tagline, Currency ($/KHR), Contact Info, and Footer Copyright.',
+                auth: false,
+                role: 'Public',
+                body: null
+            },
+            {
+                id: 'banners-get',
+                category: 'General Settings & Banners',
+                method: 'GET',
+                path: '/banners',
+                title: 'List Active Sliders & Banners',
+                desc: 'Retrieve active homepage sliders, promo banners, and hero ads with sorting and position filtering.',
+                auth: false,
+                role: 'Public',
+                queryParams: { position: 'slider' },
+                body: null
+            },
+            {
+                id: 'admin-settings-get',
+                category: 'General Settings & Banners',
+                method: 'GET',
+                path: '/admin/settings',
+                title: 'Admin: Get All System Settings',
+                desc: 'Retrieve complete system configuration grouped by category (general, contact, localization).',
+                auth: true,
+                role: 'Super Admin Only',
+                body: null
+            },
+            {
+                id: 'admin-settings-update',
+                category: 'General Settings & Banners',
+                method: 'PUT',
+                path: '/admin/settings',
+                title: 'Admin: Update System Settings (Logo, Favicon, General)',
+                desc: 'Bulk update system name, logo URL, favicon URL, contact details, currency, and copyright.',
+                auth: true,
+                role: 'Super Admin Only',
+                body: {
+                    settings: [
+                        { key: "site_title", value: "Cambodia Premier E-Commerce Hub", group: "general" },
+                        { key: "site_tagline", value: "No. 1 Trusted Marketplace in Cambodia", group: "general" },
+                        { key: "site_logo", value: "https://picsum.photos/seed/cambodia-ecom-logo/400/120", group: "general" },
+                        { key: "site_favicon", value: "https://picsum.photos/seed/cambodia-ecom-favicon/64/64", group: "general" },
+                        { key: "contact_email", value: "support@ecommerce.test", group: "contact" },
+                        { key: "contact_phone", value: "+855 23 888 999", group: "contact" },
+                        { key: "default_currency", value: "USD", group: "localization" },
+                        { key: "currency_symbol", value: "$", group: "localization" },
+                        { key: "exchange_rate_khr", value: "4100", group: "localization" }
+                    ]
+                }
+            },
+            {
+                id: 'admin-banners-list',
+                category: 'General Settings & Banners',
+                method: 'GET',
+                path: '/admin/banners',
+                title: 'Admin: List All Sliders & Banners',
+                desc: 'Paginated overview of all banners with position filter and status toggle.',
+                auth: true,
+                role: 'Super Admin Only',
+                queryParams: { position: '', status: 'active', per_page: 15 },
+                body: null
+            },
+            {
+                id: 'admin-banner-create',
+                category: 'General Settings & Banners',
+                method: 'POST',
+                path: '/admin/banners',
+                title: 'Admin: Create Slider / Banner',
+                desc: 'Create new homepage slider, hero banner, or promotional banner.',
+                auth: true,
+                role: 'Super Admin Only',
+                body: {
+                    title: "Water Festival Grand Sale 2026",
+                    subtitle: "Up to 50% off on all trending products",
+                    image_url: "https://picsum.photos/seed/water-festival-banner/1200/500",
+                    link_url: "/products",
+                    button_text: "Shop the Sale",
+                    position: "slider",
+                    order: 1,
+                    status: "active"
+                }
+            },
+            {
+                id: 'admin-banner-show',
+                category: 'General Settings & Banners',
+                method: 'GET',
+                path: '/admin/banners/{banner}',
+                title: 'Admin: Get Banner Details',
+                desc: 'Retrieve details for a single slider or banner.',
+                auth: true,
+                role: 'Super Admin Only',
+                params: { banner: '1' },
+                body: null
+            },
+            {
+                id: 'admin-banner-update',
+                category: 'General Settings & Banners',
+                method: 'PUT',
+                path: '/admin/banners/{banner}',
+                title: 'Admin: Update Slider / Banner',
+                desc: 'Update banner image, title, link URL, position, or order.',
+                auth: true,
+                role: 'Super Admin Only',
+                params: { banner: '1' },
+                body: {
+                    title: "Updated Banner Title",
+                    subtitle: "Limited time special discount",
+                    status: "active"
+                }
+            },
+            {
+                id: 'admin-banner-delete',
+                category: 'General Settings & Banners',
+                method: 'DELETE',
+                path: '/admin/banners/{banner}',
+                title: 'Admin: Delete Slider / Banner',
+                desc: 'Delete slider or promotional banner from system.',
+                auth: true,
+                role: 'Super Admin Only',
+                params: { banner: '5' },
+                body: null
+            },
+
+            // 2. Authentication
             {
                 id: 'auth-register',
                 category: 'Authentication',
@@ -818,7 +961,7 @@
                 body: null
             },
 
-            // 2. Categories
+            // 3. Categories
             {
                 id: 'cat-list',
                 category: 'Categories',
@@ -900,7 +1043,7 @@
                 body: null
             },
 
-            // 3. Products & Search
+            // 4. Products & Search
             {
                 id: 'prod-list',
                 category: 'Products',
@@ -962,7 +1105,7 @@
                 body: null
             },
 
-            // 4. Vendors
+            // 5. Vendors
             {
                 id: 'vendor-list',
                 category: 'Vendors',
@@ -988,7 +1131,7 @@
                 body: null
             },
 
-            // 5. Shopping Cart
+            // 6. Shopping Cart
             {
                 id: 'cart-get',
                 category: 'Shopping Cart',
@@ -1076,7 +1219,7 @@
                 body: null
             },
 
-            // 6. Wishlist
+            // 7. Wishlist
             {
                 id: 'wish-get',
                 category: 'Wishlist',
@@ -1125,7 +1268,7 @@
                 body: null
             },
 
-            // 7. Customer Profile & Addresses
+            // 8. Customer Profile & Addresses
             {
                 id: 'cust-profile',
                 category: 'Customer Profile & Addresses',
@@ -1223,7 +1366,7 @@
                 body: null
             },
 
-            // 8. Orders & Payments
+            // 9. Orders & Payments
             {
                 id: 'order-list',
                 category: 'Orders & Payments',
@@ -1303,7 +1446,7 @@
                 }
             },
 
-            // 9. Reviews
+            // 10. Reviews
             {
                 id: 'review-create',
                 category: 'Reviews & Ratings',
@@ -1347,7 +1490,7 @@
                 body: null
             },
 
-            // 10. Vendor Dashboard & Management
+            // 11. Vendor Dashboard & Management
             {
                 id: 'vendor-prof-get',
                 category: 'Vendor Area',
@@ -1514,7 +1657,7 @@
                 body: null
             },
 
-            // 11. Super Admin Area
+            // 12. Super Admin Dashboard & Global Management
             {
                 id: 'admin-dashboard',
                 category: 'Admin Area',
@@ -1965,6 +2108,38 @@
             }
         }
 
+        async function confirmLogout() {
+            const result = await Swal.fire({
+                title: 'Log out of current session?',
+                text: 'This will revoke your Sanctum bearer token.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Yes, Log Out',
+                cancelButtonText: 'Cancel',
+                background: currentTheme === 'dark' ? '#111827' : '#ffffff',
+                color: currentTheme === 'dark' ? '#f3f4f6' : '#0f172a',
+            });
+
+            if (result.isConfirmed) {
+                if (authToken) {
+                    try {
+                        await fetch(API_BASE + '/auth/logout', {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Authorization': `Bearer ${authToken}`
+                            }
+                        });
+                    } catch (e) {
+                        // ignore and clear locally
+                    }
+                }
+                clearToken();
+            }
+        }
+
         function setAuthToken(token, user) {
             authToken = token;
             currentUser = user;
@@ -1979,22 +2154,26 @@
             localStorage.removeItem('api_bearer_token');
             localStorage.removeItem('api_current_user');
             updateTokenBadge();
-            showToast('info', 'Logged Out', 'Bearer token cleared.');
+            showToast('info', 'Logged Out', 'Bearer token session cleared.');
         }
 
         function updateTokenBadge() {
             const badge = document.getElementById('tokenBadge');
             const text = document.getElementById('tokenStatusText');
+            const logoutBtn = document.getElementById('btnLogout');
 
             if (authToken && currentUser) {
                 badge.className = 'token-status';
                 text.innerText = `🔑 ${currentUser.name} (${currentUser.role})`;
+                if (logoutBtn) logoutBtn.style.display = 'flex';
             } else if (authToken) {
                 badge.className = 'token-status';
                 text.innerText = `🔑 Bearer Token Active`;
+                if (logoutBtn) logoutBtn.style.display = 'flex';
             } else {
                 badge.className = 'token-status unauthenticated';
                 text.innerText = 'Unauthenticated';
+                if (logoutBtn) logoutBtn.style.display = 'none';
             }
 
             updateCurlPreview();

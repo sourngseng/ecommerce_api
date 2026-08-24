@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Address;
+use App\Models\Banner;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Category;
@@ -14,6 +15,7 @@ use App\Models\Payment;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\Review;
+use App\Models\Setting;
 use App\Models\User;
 use App\Models\Vendor;
 use App\Models\Wishlist;
@@ -499,6 +501,96 @@ class DatabaseSeeder extends Seeder
         // Recalculate average ratings for all products
         foreach ($products as $product) {
             $product->updateRatingStats();
+        }
+
+        // 10. Seed System General Settings
+        $defaultSettings = [
+            // General
+            ['key' => 'site_title', 'value' => 'Cambodia Premier E-Commerce', 'group' => 'general'],
+            ['key' => 'site_tagline', 'value' => 'Best online shopping experience across Cambodia with fast delivery', 'group' => 'general'],
+            ['key' => 'site_logo', 'value' => 'https://picsum.photos/seed/cambodia-ecom-logo/400/120', 'group' => 'general'],
+            ['key' => 'site_favicon', 'value' => 'https://picsum.photos/seed/cambodia-ecom-favicon/64/64', 'group' => 'general'],
+            ['key' => 'company_name', 'value' => 'Cambodia E-Commerce Technologies Co., Ltd.', 'group' => 'general'],
+            ['key' => 'footer_copyright', 'value' => '© 2026 Cambodia E-Commerce. All rights reserved.', 'group' => 'general'],
+
+            // Contact & Social
+            ['key' => 'contact_email', 'value' => 'support@ecommerce.test', 'group' => 'contact'],
+            ['key' => 'contact_phone', 'value' => '+855 23 888 999', 'group' => 'contact'],
+            ['key' => 'contact_address', 'value' => 'Vattanac Capital Tower, Floor 18, Preah Monivong Blvd, Phnom Penh', 'group' => 'contact'],
+            ['key' => 'facebook_url', 'value' => 'https://facebook.com/cambodia.ecommerce', 'group' => 'contact'],
+            ['key' => 'telegram_channel', 'value' => 'https://t.me/cambodia_ecommerce', 'group' => 'contact'],
+
+            // Localization & Currency
+            ['key' => 'default_currency', 'value' => 'USD', 'group' => 'localization'],
+            ['key' => 'currency_symbol', 'value' => '$', 'group' => 'localization'],
+            ['key' => 'exchange_rate_khr', 'value' => '4100', 'group' => 'localization'],
+            ['key' => 'tax_rate_percent', 'value' => '0', 'group' => 'localization'],
+            ['key' => 'free_shipping_threshold', 'value' => '50.00', 'group' => 'localization'],
+        ];
+
+        foreach ($defaultSettings as $setting) {
+            Setting::updateOrCreate(
+                ['key' => $setting['key']],
+                ['value' => $setting['value'], 'group' => $setting['group']]
+            );
+        }
+
+        // 11. Seed Banners and Sliders
+        $bannersData = [
+            [
+                'title' => 'Khmer New Year Mega Tech Expo',
+                'subtitle' => 'Save up to 40% on top smartphones, laptops, and smart wearables',
+                'image_url' => 'https://picsum.photos/seed/slider-tech-expo/1200/500',
+                'link_url' => '/categories/electronics',
+                'button_text' => 'Shop Electronics',
+                'position' => 'slider',
+                'order' => 1,
+                'status' => 'active',
+            ],
+            [
+                'title' => 'Angkor Silk & Modern Fashion 2026',
+                'subtitle' => 'Authentic Cambodian designs reimagined for contemporary urban styles',
+                'image_url' => 'https://picsum.photos/seed/slider-angkor-fashion/1200/500',
+                'link_url' => '/categories/fashion',
+                'button_text' => 'Discover Collections',
+                'position' => 'slider',
+                'order' => 2,
+                'status' => 'active',
+            ],
+            [
+                'title' => 'Home Cooking & Modern Kitchen Appliances',
+                'subtitle' => 'Premium Airfryers, Espresso Machines, and Chef sets delivered free',
+                'image_url' => 'https://picsum.photos/seed/slider-home-kitchen/1200/500',
+                'link_url' => '/categories/home-kitchen',
+                'button_text' => 'Explore Home Deals',
+                'position' => 'slider',
+                'order' => 3,
+                'status' => 'active',
+            ],
+            [
+                'title' => 'Top Flagship Smartphones Promo',
+                'subtitle' => 'iPhone 15 Pro & Galaxy S24 Ultra with official warranty',
+                'image_url' => 'https://picsum.photos/seed/banner-smartphones/800/400',
+                'link_url' => '/categories/mobile-phones',
+                'button_text' => 'Get Yours Today',
+                'position' => 'hero_banner',
+                'order' => 1,
+                'status' => 'active',
+            ],
+            [
+                'title' => 'Use Code WELCOME10 for 10% Off',
+                'subtitle' => 'Applicable on your first checkout over $20. Valid this month!',
+                'image_url' => 'https://picsum.photos/seed/promo-coupon-banner/800/300',
+                'link_url' => '/products',
+                'button_text' => 'Start Shopping',
+                'position' => 'promo_banner',
+                'order' => 1,
+                'status' => 'active',
+            ],
+        ];
+
+        foreach ($bannersData as $b) {
+            Banner::create($b);
         }
     }
 }
