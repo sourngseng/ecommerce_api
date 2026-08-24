@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../core/constants/api_constants.dart';
+import '../models/banner_model.dart';
+import '../models/category_model.dart';
+import '../models/product_model.dart';
 import '../models/user_model.dart';
 
 class ApiResponse<T> {
@@ -180,5 +183,65 @@ class ApiService {
       }
     } catch (_) {}
     return {};
+  }
+
+  // 6. Get Banners
+  Future<List<BannerModel>> getBanners() async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.bannersEndpoint}?position=slider');
+      final response = await _client.get(url, headers: _getHeaders());
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['success'] == true && body['data'] is List) {
+          return (body['data'] as List).map((b) => BannerModel.fromJson(b)).toList();
+        }
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  // 7. Get Categories
+  Future<List<CategoryModel>> getCategories() async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.categoriesEndpoint}');
+      final response = await _client.get(url, headers: _getHeaders());
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['success'] == true && body['data'] is List) {
+          return (body['data'] as List).map((c) => CategoryModel.fromJson(c)).toList();
+        }
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  // 8. Get Products (Flash Sale / Discounted)
+  Future<List<ProductModel>> getFlashSaleProducts() async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.productsEndpoint}?featured=1&per_page=6');
+      final response = await _client.get(url, headers: _getHeaders());
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['success'] == true && body['data'] is List) {
+          return (body['data'] as List).map((p) => ProductModel.fromJson(p)).toList();
+        }
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  // 9. Get New Arrivals
+  Future<List<ProductModel>> getNewArrivals() async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.productsEndpoint}?sort_by=created_at&sort_order=desc&per_page=8');
+      final response = await _client.get(url, headers: _getHeaders());
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['success'] == true && body['data'] is List) {
+          return (body['data'] as List).map((p) => ProductModel.fromJson(p)).toList();
+        }
+      }
+    } catch (_) {}
+    return [];
   }
 }
