@@ -215,11 +215,48 @@ class ApiService {
     return [];
   }
 
-  // 8. Get Products (Flash Sale / Discounted)
-  Future<List<ProductModel>> getFlashSaleProducts() async {
+  // 8. Get Products with dynamic filtering & sorting
+  Future<List<ProductModel>> getProducts({
+    int? categoryId,
+    String? search,
+    String? sortBy,
+    String? sortOrder,
+    double? minPrice,
+    double? maxPrice,
+    bool? featured,
+    int perPage = 20,
+  }) async {
     try {
-      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.productsEndpoint}?featured=1&per_page=6');
+      final uri = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.productsEndpoint}');
+      final queryParams = <String, String>{
+        'per_page': perPage.toString(),
+      };
+
+      if (categoryId != null && categoryId > 0) {
+        queryParams['category_id'] = categoryId.toString();
+      }
+      if (search != null && search.trim().isNotEmpty) {
+        queryParams['search'] = search.trim();
+      }
+      if (sortBy != null && sortBy.isNotEmpty) {
+        queryParams['sort_by'] = sortBy;
+      }
+      if (sortOrder != null && sortOrder.isNotEmpty) {
+        queryParams['sort_order'] = sortOrder;
+      }
+      if (minPrice != null && minPrice > 0) {
+        queryParams['min_price'] = minPrice.toString();
+      }
+      if (maxPrice != null && maxPrice > 0) {
+        queryParams['max_price'] = maxPrice.toString();
+      }
+      if (featured == true) {
+        queryParams['featured'] = '1';
+      }
+
+      final url = uri.replace(queryParameters: queryParams);
       final response = await _client.get(url, headers: _getHeaders());
+
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
         if (body['success'] == true && body['data'] is List) {
@@ -230,18 +267,13 @@ class ApiService {
     return [];
   }
 
-  // 9. Get New Arrivals
+  // 9. Get Flash Sale Products
+  Future<List<ProductModel>> getFlashSaleProducts() async {
+    return getProducts(featured: true, perPage: 6);
+  }
+
+  // 10. Get New Arrivals
   Future<List<ProductModel>> getNewArrivals() async {
-    try {
-      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.productsEndpoint}?sort_by=created_at&sort_order=desc&per_page=8');
-      final response = await _client.get(url, headers: _getHeaders());
-      if (response.statusCode == 200) {
-        final body = jsonDecode(response.body);
-        if (body['success'] == true && body['data'] is List) {
-          return (body['data'] as List).map((p) => ProductModel.fromJson(p)).toList();
-        }
-      }
-    } catch (_) {}
-    return [];
+    return getProducts(sortBy: 'created_at', sortOrder: 'desc', perPage: 8);
   }
 }
