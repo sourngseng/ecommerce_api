@@ -132,40 +132,45 @@
             align-items: center;
             gap: 12px;
             cursor: pointer;
-            padding: 4px 8px;
+            padding: 4px 10px;
             border-radius: 8px;
-            transition: background-color 0.2s ease;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            user-select: none;
         }
 
         .logo-group:hover {
             background-color: rgba(99, 102, 241, 0.08);
+            transform: translateY(-1px);
         }
 
+        /* Clean Logo Badge - Transparent with no purple box background */
         .logo-badge {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #6366f1, #ec4899);
-            border-radius: 10px;
+            width: 42px;
+            height: 42px;
+            background: transparent !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 800;
-            font-size: 18px;
-            color: white;
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
-            overflow: hidden;
+            font-size: 28px;
+            overflow: visible;
             flex-shrink: 0;
         }
 
         .logo-badge img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            border-radius: 4px;
         }
 
         .logo-title-wrap {
             display: flex;
             flex-direction: column;
+            gap: 2px;
         }
 
         .logo-title-row {
@@ -178,23 +183,24 @@
             font-size: 16.5px;
             font-weight: 800;
             letter-spacing: -0.3px;
+            color: var(--text-main);
         }
 
         .edit-brand-badge {
-            font-size: 10.5px;
+            font-size: 10px;
             font-weight: 700;
             padding: 2px 7px;
             border-radius: 4px;
-            background: rgba(99, 102, 241, 0.15);
+            background: rgba(99, 102, 241, 0.12);
             color: var(--primary);
-            border: 1px solid rgba(99, 102, 241, 0.3);
+            border: 1px solid rgba(99, 102, 241, 0.25);
             display: flex;
             align-items: center;
             gap: 3px;
         }
 
         .logo-subtitle {
-            font-size: 12px;
+            font-size: 11.5px;
             color: var(--text-dim);
             font-weight: 500;
         }
@@ -721,6 +727,33 @@
 
         .curl-box.show {
             display: block;
+        }
+
+        /* Custom Modal Form Styling */
+        .branding-form-card {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 12px;
+            text-align: left;
+        }
+        .branding-preview-box {
+            width: 60px;
+            height: 60px;
+            background: rgba(0,0,0,0.15);
+            border: 1px dashed var(--border-color);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .branding-preview-box img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
         }
     </style>
 </head>
@@ -1786,7 +1819,7 @@
             }
 
             if (settings.site_logo && logoBadge) {
-                logoBadge.innerHTML = `<img src="${settings.site_logo}" alt="App Logo" style="width:100%; height:100%; object-fit:contain;" onerror="this.onerror=null; this.parentElement.innerText='⚡';">`;
+                logoBadge.innerHTML = `<img src="${settings.site_logo}" alt="App Logo" style="max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain;" onerror="this.onerror=null; this.parentElement.innerText='⚡';">`;
             }
         }
 
@@ -1794,44 +1827,83 @@
         async function openBrandingModal() {
             const isAdmin = currentUser && currentUser.role === 'admin';
             const currentTitle = currentSettings.site_title || (document.getElementById('appHeaderTitle')?.innerText || 'E-Commerce REST API Explorer');
-            const currentTagline = currentSettings.site_tagline || 'Best online shopping experience across Cambodia';
+            const currentTagline = currentSettings.site_tagline || 'Best online shopping experience across Cambodia with fast delivery';
             const currentLogo = currentSettings.site_logo || '';
             const currentFavicon = currentSettings.site_favicon || '';
 
             const isDark = currentTheme === 'dark';
 
             const { value: formValues } = await Swal.fire({
-                title: '⚙️ App Branding & Logo Customizer',
+                title: '<div style="font-size:20px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:8px;">⚙️ App Branding & Logo</div>',
                 html: `
-                    <div style="text-align:left; font-size:13px; display:flex; flex-direction:column; gap:14px; margin-top:10px;">
+                    <div style="text-align:left; font-size:13px; display:flex; flex-direction:column; gap:12px; margin-top:6px;">
                         ${!isAdmin ? `
-                            <div style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); color:#f59e0b; padding:8px 12px; border-radius:6px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
-                                <span>⚠️ Admin login required to save settings permanently.</span>
-                                <button type="button" onclick="quickLogin('admin@ecommerce.test', 'Super Admin'); Swal.close();" style="background:#f59e0b; color:black; border:none; padding:4px 8px; border-radius:4px; font-weight:700; cursor:pointer; font-size:11px;">1-Click Admin</button>
+                            <div style="background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3); color:#f59e0b; padding:10px 14px; border-radius:8px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
+                                <span>⚠️ Admin login required to save changes permanently.</span>
+                                <button type="button" onclick="quickLogin('admin@ecommerce.test', 'Super Admin'); Swal.close();" style="background:#f59e0b; color:black; border:none; padding:5px 10px; border-radius:5px; font-weight:700; cursor:pointer; font-size:11px;">1-Click Admin</button>
                             </div>
                         ` : ''}
 
-                        <div>
-                            <label style="font-weight:700; color:var(--text-main); font-size:12px; margin-bottom:4px; display:block;">App / Website Name:</label>
-                            <input type="text" id="swalAppName" class="swal2-input" value="${currentTitle}" placeholder="e.g. Cambodia Premier E-Commerce" style="margin:0; width:100%; font-size:13px; padding:10px;">
+                        <!-- Section 1: App Identity -->
+                        <div class="branding-form-card">
+                            <label style="font-weight:700; color:var(--text-main); font-size:12px; margin-bottom:6px; display:block;">App / Website Name:</label>
+                            <input type="text" id="swalAppName" class="input-text" value="${escapeHtml(currentTitle)}" placeholder="e.g. Cambodia Premier E-Commerce" oninput="updateModalPreview()">
+
+                            <label style="font-weight:700; color:var(--text-main); font-size:12px; margin:10px 0 6px; display:block;">App Tagline / Subtitle:</label>
+                            <input type="text" id="swalAppTagline" class="input-text" value="${escapeHtml(currentTagline)}" placeholder="e.g. No. 1 Marketplace in Cambodia" oninput="updateModalPreview()">
                         </div>
 
-                        <div>
-                            <label style="font-weight:700; color:var(--text-main); font-size:12px; margin-bottom:4px; display:block;">App Tagline / Subtitle:</label>
-                            <input type="text" id="swalAppTagline" class="swal2-input" value="${currentTagline}" placeholder="e.g. No. 1 Marketplace in Cambodia" style="margin:0; width:100%; font-size:13px; padding:10px;">
+                        <!-- Section 2: Logo Image -->
+                        <div class="branding-form-card">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                <label style="font-weight:700; color:var(--text-main); font-size:12px;">Logo Image:</label>
+                                <span style="font-size:11px; color:var(--text-dim);">Transparent PNG, SVG, JPG, WebP</span>
+                            </div>
+
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <div class="branding-preview-box" id="swalLogoPreviewBox">
+                                    ${currentLogo ? `<img src="${currentLogo}" id="swalLogoImg" alt="Logo">` : '<span style="font-size:24px;">⚡</span>'}
+                                </div>
+                                <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                                    <input type="file" id="swalLogoFile" accept="image/*" style="display:none;" onchange="handleLogoFileSelect(this)">
+                                    <button type="button" onclick="document.getElementById('swalLogoFile').click()" class="btn-secondary" style="width:100%; padding:8px; display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700;">
+                                        📁 Choose Logo File
+                                    </button>
+                                    <input type="text" id="swalLogoUrl" class="input-text" value="${escapeHtml(currentLogo)}" placeholder="Or paste image URL (https://...)" style="font-size:11.5px; padding:6px 10px;" oninput="handleLogoUrlInput(this.value)">
+                                </div>
+                            </div>
                         </div>
 
-                        <div style="border:1px dashed var(--border-color); padding:12px; border-radius:8px; background:var(--bg-input);">
-                            <label style="font-weight:700; color:var(--text-main); font-size:12px; margin-bottom:4px; display:block;">Logo Image Upload:</label>
-                            <input type="file" id="swalLogoFile" accept="image/*" style="font-size:12px; color:var(--text-main); width:100%; margin-top:4px;">
-                            <div style="font-size:11px; color:var(--text-dim); margin-top:6px;">Or paste Logo Image URL:</div>
-                            <input type="text" id="swalLogoUrl" class="swal2-input" value="${currentLogo}" placeholder="https://example.com/logo.png" style="margin:4px 0 0 0; width:100%; font-size:12px; padding:8px;">
+                        <!-- Section 3: Favicon Image -->
+                        <div class="branding-form-card">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                <label style="font-weight:700; color:var(--text-main); font-size:12px;">Favicon Icon:</label>
+                                <span style="font-size:11px; color:var(--text-dim);">.ico, .png, .svg</span>
+                            </div>
+
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <div class="branding-preview-box" id="swalFaviconPreviewBox" style="width:40px; height:40px;">
+                                    ${currentFavicon ? `<img src="${currentFavicon}" id="swalFaviconImg" alt="Favicon">` : '<span style="font-size:16px;">🔖</span>'}
+                                </div>
+                                <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                                    <input type="file" id="swalFaviconFile" accept="image/*,.ico" style="display:none;" onchange="handleFaviconFileSelect(this)">
+                                    <button type="button" onclick="document.getElementById('swalFaviconFile').click()" class="btn-secondary" style="width:100%; padding:6px; display:flex; align-items:center; justify-content:center; gap:6px; font-weight:600; font-size:11.5px;">
+                                        📁 Choose Favicon File
+                                    </button>
+                                    <input type="text" id="swalFaviconUrl" class="input-text" value="${escapeHtml(currentFavicon)}" placeholder="Or paste favicon URL (https://...)" style="font-size:11px; padding:5px 8px;" oninput="handleFaviconUrlInput(this.value)">
+                                </div>
+                            </div>
                         </div>
 
-                        <div style="border:1px dashed var(--border-color); padding:12px; border-radius:8px; background:var(--bg-input);">
-                            <label style="font-weight:700; color:var(--text-main); font-size:12px; margin-bottom:4px; display:block;">Favicon Image Upload / URL:</label>
-                            <input type="file" id="swalFaviconFile" accept="image/*" style="font-size:12px; color:var(--text-main); width:100%; margin-top:4px;">
-                            <input type="text" id="swalFaviconUrl" class="swal2-input" value="${currentFavicon}" placeholder="https://example.com/favicon.ico" style="margin:4px 0 0 0; width:100%; font-size:12px; padding:8px;">
+                        <!-- Live Navbar Preview -->
+                        <div style="background:var(--header-bg); border:1px solid var(--border-color); border-radius:8px; padding:10px 14px; display:flex; align-items:center; gap:10px;">
+                            <div id="modalMockLogo" style="width:36px; height:36px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                ${currentLogo ? `<img src="${currentLogo}" style="max-width:100%; max-height:100%; object-fit:contain;">` : '<span style="font-size:22px;">⚡</span>'}
+                            </div>
+                            <div style="display:flex; flex-direction:column;">
+                                <div id="modalMockTitle" style="font-weight:800; font-size:14px; color:var(--text-main);">${escapeHtml(currentTitle)}</div>
+                                <div id="modalMockTagline" style="font-size:11px; color:var(--text-dim);">${escapeHtml(currentTagline)}</div>
+                            </div>
                         </div>
                     </div>
                 `,
@@ -1859,6 +1931,63 @@
                 await saveBrandingSettings(formValues);
             }
         }
+
+        // Real-time Modal Input Handlers
+        window.updateModalPreview = function() {
+            const name = document.getElementById('swalAppName')?.value || 'App Name';
+            const tagline = document.getElementById('swalAppTagline')?.value || '';
+            const titleMock = document.getElementById('modalMockTitle');
+            const tagMock = document.getElementById('modalMockTagline');
+            if (titleMock) titleMock.innerText = name;
+            if (tagMock) tagMock.innerText = tagline;
+        };
+
+        window.handleLogoFileSelect = function(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const previewBox = document.getElementById('swalLogoPreviewBox');
+                    const mockLogo = document.getElementById('modalMockLogo');
+                    const imgHtml = `<img src="${e.target.result}" style="max-width:100%; max-height:100%; object-fit:contain;">`;
+                    if (previewBox) previewBox.innerHTML = imgHtml;
+                    if (mockLogo) mockLogo.innerHTML = imgHtml;
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+        window.handleLogoUrlInput = function(url) {
+            const previewBox = document.getElementById('swalLogoPreviewBox');
+            const mockLogo = document.getElementById('modalMockLogo');
+            if (url) {
+                const imgHtml = `<img src="${url}" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="this.onerror=null; this.parentElement.innerHTML='⚡';">`;
+                if (previewBox) previewBox.innerHTML = imgHtml;
+                if (mockLogo) mockLogo.innerHTML = imgHtml;
+            } else {
+                if (previewBox) previewBox.innerHTML = '<span style="font-size:24px;">⚡</span>';
+                if (mockLogo) mockLogo.innerHTML = '<span style="font-size:22px;">⚡</span>';
+            }
+        };
+
+        window.handleFaviconFileSelect = function(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const previewBox = document.getElementById('swalFaviconPreviewBox');
+                    if (previewBox) previewBox.innerHTML = `<img src="${e.target.result}" style="max-width:100%; max-height:100%; object-fit:contain;">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+        window.handleFaviconUrlInput = function(url) {
+            const previewBox = document.getElementById('swalFaviconPreviewBox');
+            if (previewBox) {
+                previewBox.innerHTML = url ? `<img src="${url}" style="max-width:100%; max-height:100%; object-fit:contain;">` : '<span style="font-size:16px;">🔖</span>';
+            }
+        };
 
         async function saveBrandingSettings(values) {
             if (!authToken) {
@@ -2480,6 +2609,7 @@
         }
 
         function escapeHtml(text) {
+            if (!text) return '';
             const div = document.createElement('div');
             div.innerText = text;
             return div.innerHTML;
