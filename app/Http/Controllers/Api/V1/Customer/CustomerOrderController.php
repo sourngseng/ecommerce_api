@@ -24,11 +24,22 @@ class CustomerOrderController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $perPage = min((int) $request->query('per_page', 15), 100);
-        $orders = $request->user()->orders()
-            ->with(['items.product', 'payment', 'coupon'])
-            ->latest()
-            ->paginate($perPage);
+        $perPage = min((int) $request->query('per_page', 50), 100);
+        $status = $request->query('status');
+
+        $query = $request->user()->orders()
+            ->with(['items.product.images', 'payment', 'coupon'])
+            ->latest();
+
+        if ($status && $status !== 'all' && $status !== 'all_orders') {
+            if ($status === 'to_pay') {
+                $query->whereIn('status', ['pending', 'unpaid']);
+            } else {
+                $query->where('status', $status);
+            }
+        }
+
+        $orders = $query->paginate($perPage);
 
         return $this->successWithPagination(
             $orders,

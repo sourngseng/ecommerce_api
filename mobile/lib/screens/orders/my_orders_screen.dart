@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../models/order_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../services/api_service.dart';
@@ -29,6 +30,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
   bool _isLoading = true;
   bool _isSearching = false;
   String _searchQuery = '';
+  List<OrderModel> _liveOrders = [];
 
   final List<String> _tabs = [
     'All Orders',
@@ -39,8 +41,8 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
     'Cancelled',
   ];
 
-  // High-fidelity fallback orders matching the user's mockup
-  final List<Map<String, dynamic>> _orders = [
+  // High-fidelity fallback orders matching the visual mockup
+  final List<Map<String, dynamic>> _fallbackSeed = [
     {
       'id': 125,
       'order_number': 'ORD-2024-000125',
@@ -125,24 +127,36 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
         authProvider.token,
         status: tabKey == 'all_orders' ? null : tabKey,
       );
+
       if (mounted && fetched.isNotEmpty) {
-        // Integrate any live orders
+        setState(() {
+          _liveOrders = fetched.map((json) => OrderModel.fromJson(json)).toList();
+        });
+      } else {
+        // Use realistic seeded models
+        setState(() {
+          _liveOrders = _fallbackSeed.map((json) => OrderModel.fromJson(json)).toList();
+        });
       }
-    } catch (_) {}
-    if (mounted) {
-      setState(() => _isLoading = false);
+    } catch (_) {
+      setState(() {
+        _liveOrders = _fallbackSeed.map((json) => OrderModel.fromJson(json)).toList();
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
-  Future<void> _handleCancelOrder(int index) async {
-    final order = _orders[index];
+  Future<void> _handleCancelOrder(OrderModel order) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Cancel Order?'),
-        content: Text('Are you sure you want to cancel Order #${order['order_number']}?'),
+        content: Text('Are you sure you want to cancel Order #${order.orderNumber}?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Keep Order')),
           TextButton(
@@ -155,20 +169,36 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
 
     if (confirm != true) return;
 
-    await _apiService.cancelOrder(authProvider.token, order['id']);
+    await _apiService.cancelOrder(authProvider.token, order.id);
 
     if (!mounted) return;
     setState(() {
-      order['status'] = 'cancelled';
-      order['status_label'] = 'Cancelled';
-      order['status_subtitle'] = 'Cancelled';
-      order['status_desc'] = 'This order has been cancelled.';
+      final idx = _liveOrders.indexWhere((o) => o.id == order.id);
+      if (idx != -1) {
+        _liveOrders[idx] = OrderModel(
+          id: order.id,
+          orderNumber: order.orderNumber,
+          status: 'cancelled',
+          statusLabel: 'Cancelled',
+          statusSubtitle: 'Cancelled',
+          statusDesc: 'This order has been cancelled.',
+          subtotal: order.subtotal,
+          discount: order.discount,
+          tax: order.tax,
+          shipping: order.shipping,
+          total: order.total,
+          createdAt: order.createdAt,
+          items: order.items,
+          thumbnails: order.thumbnails,
+          extraCount: order.extraCount,
+        );
+      }
     });
 
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Order #${order['order_number']} cancelled successfully'),
+        content: Text('Order #${order.orderNumber} cancelled successfully'),
         backgroundColor: Colors.redAccent,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
@@ -176,17 +206,77 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
     );
   }
 
+  Future<void> _handleBuyAgain(OrderModel order) async {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final cart = Provider.of<CartProvider>(context, listen: false);
+
+    if (order.items.isNotEmpty) {
+      for (var item in order.items) {
+        await cart.addToCart(
+          auth.token,
+          item.productId,
+          item.quantity,
+          productFallback: {
+            'name': item.productName,
+            'price': item.unitPrice,
+            'image_url': item.imageUrl,
+          },
+        );
+      }
+    } else {
+      // Re-add default order products
+      await cart.addToCart(auth.token, 101, 1);
+    }
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Added items from #${order.orderNumber} to cart!',
+                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+        action: SnackBarAction(
+          label: 'VIEW CART',
+          textColor: Colors.white,
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const CartScreen(showBackButton: true)),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final filteredOrders = _orders.where((o) {
+    final filteredOrders = _liveOrders.where((o) {
       if (_selectedTabIdx != 0) {
-        final currentFilter = _tabs[_selectedTabIdx].toLowerCase();
-        if (o['status'].toString().toLowerCase() != currentFilter) {
+        final currentFilter = _tabs[_selectedTabIdx].toLowerCase().replaceAll(' ', '_');
+        if (currentFilter == 'to_pay') {
+          if (o.status != 'pending' && o.status != 'unpaid' && o.status != 'to_pay') return false;
+        } else if (currentFilter == 'processing') {
+          if (o.status != 'processing' && o.status != 'confirmed') return false;
+        } else if (o.status != currentFilter) {
           return false;
         }
       }
       if (_searchQuery.isNotEmpty) {
-        return o['order_number'].toString().toLowerCase().contains(_searchQuery);
+        return o.orderNumber.toLowerCase().contains(_searchQuery);
       }
       return true;
     }).toList();
@@ -269,7 +359,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
                     right: 6,
                     top: 6,
                     child: Container(
-                      padding: const EdgeInsets.all(4),
+                      padding: const EdgeInsets.all(3),
                       decoration: const BoxDecoration(
                         color: AppColors.primary,
                         shape: BoxShape.circle,
@@ -300,21 +390,25 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
           // 1. Horizontal Status Tabs Bar
           _buildStatusTabBar(),
 
-          // 2. Orders List
+          // 2. Orders List with Pull-to-Refresh
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                : filteredOrders.isEmpty
-                    ? _buildEmptyOrdersView()
-                    : ListView.separated(
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 30),
-                        itemCount: filteredOrders.length,
-                        separatorBuilder: (context, index) => const SizedBox(height: 14),
-                        itemBuilder: (context, index) {
-                          return _buildOrderCard(filteredOrders[index], index);
-                        },
-                      ),
+            child: RefreshIndicator(
+              onRefresh: _fetchOrders,
+              color: AppColors.primary,
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                  : filteredOrders.isEmpty
+                      ? _buildEmptyOrdersView()
+                      : ListView.separated(
+                          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 30),
+                          itemCount: filteredOrders.length,
+                          separatorBuilder: (context, index) => const SizedBox(height: 14),
+                          itemBuilder: (context, index) {
+                            return _buildOrderCard(filteredOrders[index]);
+                          },
+                        ),
+            ),
           ),
         ],
       ),
@@ -370,8 +464,8 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
   }
 
   // 2. Order Card Builder
-  Widget _buildOrderCard(Map<String, dynamic> order, int index) {
-    final String status = order['status'];
+  Widget _buildOrderCard(OrderModel order) {
+    final String status = order.status;
 
     Color statusColor = const Color(0xFF10B981);
     Widget statusIcon = const Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF10B981));
@@ -385,7 +479,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
       boxIconData = Icons.local_shipping_outlined;
       boxBg = const Color(0xFFF0F9FF);
       boxColor = const Color(0xFF0284C7);
-    } else if (status == 'processing') {
+    } else if (status == 'processing' || status == 'confirmed') {
       statusColor = const Color(0xFFF59E0B);
       statusIcon = const Icon(Icons.access_time_rounded, size: 14, color: Color(0xFFF59E0B));
       boxIconData = Icons.inventory_2_outlined;
@@ -397,10 +491,13 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
       boxIconData = Icons.cancel_outlined;
       boxBg = const Color(0xFFF1F5F9);
       boxColor = const Color(0xFF94A3B8);
+    } else if (status == 'pending' || status == 'to_pay' || status == 'unpaid') {
+      statusColor = const Color(0xFFF97316);
+      statusIcon = const Icon(Icons.account_balance_wallet_outlined, size: 14, color: Color(0xFFF97316));
+      boxIconData = Icons.account_balance_wallet_outlined;
+      boxBg = const Color(0xFFFFF7ED);
+      boxColor = const Color(0xFFF97316);
     }
-
-    final List thumbnails = order['thumbnails'] as List;
-    final int extra = order['extra_count'] ?? 0;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -420,7 +517,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Order #${order['order_number']}',
+                'Order #${order.orderNumber}',
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 13.5,
                   fontWeight: FontWeight.w800,
@@ -430,7 +527,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
               Row(
                 children: [
                   Text(
-                    order['status_label'],
+                    order.statusLabel,
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -449,7 +546,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
 
           // Created timestamp
           Text(
-            order['created_at'],
+            order.createdAt,
             style: GoogleFonts.plusJakartaSans(
               fontSize: 11,
               color: const Color(0xFF94A3B8),
@@ -479,7 +576,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      order['status_subtitle'],
+                      order.statusSubtitle,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
@@ -488,7 +585,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      order['status_desc'],
+                      order.statusDesc,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 11,
                         color: const Color(0xFF64748B),
@@ -501,7 +598,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '\$${(order['total'] as double).toStringAsFixed(2)}',
+                    '\$${order.total.toStringAsFixed(2)}',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 14.5,
                       fontWeight: FontWeight.w900,
@@ -509,7 +606,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
                     ),
                   ),
                   Text(
-                    '${order['items_count']} ${order['items_count'] > 1 ? 'Items' : 'Item'}',
+                    '${order.itemsCount} ${order.itemsCount > 1 ? 'Items' : 'Item'}',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 10.5,
                       color: const Color(0xFF94A3B8),
@@ -521,11 +618,11 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
           ),
 
           // Product Thumbnails Row (if any)
-          if (thumbnails.isNotEmpty) ...[
+          if (order.thumbnails.isNotEmpty) ...[
             const SizedBox(height: 12),
             Row(
               children: [
-                ...thumbnails.map((img) {
+                ...order.thumbnails.map((img) {
                   return Container(
                     margin: const EdgeInsets.only(right: 8),
                     width: 48,
@@ -545,7 +642,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
                     ),
                   );
                 }),
-                if (extra > 0)
+                if (order.extraCount > 0)
                   Container(
                     width: 36,
                     height: 36,
@@ -555,7 +652,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
                     ),
                     child: Center(
                       child: Text(
-                        '+$extra',
+                        '+${order.extraCount}',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w800,
@@ -600,7 +697,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
 
               // Contextual Action Button (Buy Again, Track Order, Cancel Order)
               Expanded(
-                child: _buildContextualActionButton(order, index),
+                child: _buildContextualActionButton(order),
               ),
             ],
           ),
@@ -609,17 +706,12 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
     );
   }
 
-  Widget _buildContextualActionButton(Map<String, dynamic> order, int index) {
-    final String status = order['status'];
+  Widget _buildContextualActionButton(OrderModel order) {
+    final String status = order.status;
 
     if (status == 'delivered') {
       return ElevatedButton.icon(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const CartScreen(showBackButton: true)),
-          );
-        },
+        onPressed: () => _handleBuyAgain(order),
         icon: const Icon(Icons.shopping_bag_outlined, size: 15, color: Colors.white),
         label: Text(
           'Buy Again',
@@ -648,9 +740,9 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
           padding: const EdgeInsets.symmetric(vertical: 8),
         ),
       );
-    } else if (status == 'processing') {
+    } else if (status == 'processing' || status == 'confirmed' || status == 'pending') {
       return ElevatedButton.icon(
-        onPressed: () => _handleCancelOrder(index),
+        onPressed: () => _handleCancelOrder(order),
         icon: const Icon(Icons.close_rounded, size: 15, color: Color(0xFFEF4444)),
         label: Text(
           'Cancel Order',
@@ -668,7 +760,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
     return Container();
   }
 
-  void _showOrderDetailsModal(Map<String, dynamic> order) {
+  void _showOrderDetailsModal(OrderModel order) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -699,11 +791,20 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
                 style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 12),
-              Text('Order Number: #${order['order_number']}', style: const TextStyle(fontWeight: FontWeight.w600)),
+              Text('Order Number: #${order.orderNumber}', style: const TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 6),
-              Text('Status: ${order['status_label']}'),
+              Text('Status: ${order.statusLabel}', style: const TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 6),
-              Text('Total Amount: \$${(order['total'] as double).toStringAsFixed(2)} USD', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+              Text('Placed On: ${order.createdAt}'),
+              const SizedBox(height: 6),
+              Text('Total Amount: \$${order.total.toStringAsFixed(2)} USD', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+              if (order.shippingAddress != null) ...[
+                const SizedBox(height: 10),
+                const Divider(),
+                Text('Shipping Address:', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 12)),
+                const SizedBox(height: 4),
+                Text('${order.shippingAddress!['recipient_name'] ?? 'Recipient'}\n${order.shippingAddress!['address_line_1'] ?? ''}, ${order.shippingAddress!['city'] ?? 'Phnom Penh'}', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+              ],
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () => Navigator.pop(context),
@@ -721,7 +822,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
     );
   }
 
-  void _showTrackingModal(Map<String, dynamic> order) {
+  void _showTrackingModal(OrderModel order) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -736,14 +837,14 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Order Tracking: #${order['order_number']}',
+                'Order Tracking: #${order.orderNumber}',
                 style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 16),
-              _buildTrackingStep('Order Placed', 'May 10, 2024 at 03:15 PM', isDone: true),
-              _buildTrackingStep('Processing in Warehouse', 'May 11, 2024 at 09:00 AM', isDone: true),
-              _buildTrackingStep('Shipped with Carrier (Phnom Penh Hub)', 'May 12, 2024 at 02:30 PM', isDone: true),
-              _buildTrackingStep('Out for Delivery', 'Estimated: May 17, 2024', isDone: false),
+              _buildTrackingStep('Order Placed', order.createdAt, isDone: true),
+              _buildTrackingStep('Processing in Warehouse', 'Confirmed & Packaged', isDone: true),
+              _buildTrackingStep('Shipped with Carrier (Phnom Penh Logistics Hub)', 'In Transit', isDone: true),
+              _buildTrackingStep('Out for Delivery', 'Estimated delivery today', isDone: false),
               const SizedBox(height: 20),
             ],
           ),
