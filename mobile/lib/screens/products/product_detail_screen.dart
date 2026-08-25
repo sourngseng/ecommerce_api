@@ -287,28 +287,33 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           );
                         },
                       ),
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: AppColors.primary,
-                            shape: BoxShape.circle,
-                          ),
-                          constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                          child: Center(
-                            child: Text(
-                              '2',
-                              style: GoogleFonts.plusJakartaSans(
-                                color: Colors.white,
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w800,
-                                height: 1,
+                      Consumer<CartProvider>(
+                        builder: (context, cart, _) {
+                          if (cart.itemCount <= 0) return const SizedBox.shrink();
+                          return Positioned(
+                            right: 0,
+                            top: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
+                              ),
+                              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                              child: Center(
+                                child: Text(
+                                  '${cart.itemCount}',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    color: Colors.white,
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w800,
+                                    height: 1,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
+                          );
+                        },
                       ),
                     ],
                   ),

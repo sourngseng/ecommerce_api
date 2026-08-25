@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/cart_provider.dart';
 import '../../services/api_service.dart';
 
 class CheckoutScreen extends StatefulWidget {
@@ -112,6 +113,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final selectedAddress = _addresses[_selectedAddressIndex];
     final selectedShipping = _shippingMethods[_selectedShippingIndex];
     final selectedPayment = _paymentMethods[_selectedPaymentIndex];
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
 
     final res = await _apiService.createOrder(
       token: authProvider.token,
@@ -123,6 +125,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     if (!mounted) return;
     setState(() => _isPlacingOrder = false);
+
+    // WIPE/CLEAR CART AUTOMATICALLY ON CHECKOUT & PAYMENT COMPLETE
+    await cartProvider.clearCart(authProvider.token);
 
     _showOrderSuccessDialog(res.data?['order_number'] ?? 'ORD-#${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}');
   }

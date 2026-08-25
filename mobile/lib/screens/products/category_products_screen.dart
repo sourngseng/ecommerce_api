@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/category_model.dart';
 import '../../models/product_model.dart';
+import '../../providers/cart_provider.dart';
 import '../../services/api_service.dart';
 import '../cart/cart_screen.dart';
 import '../wishlist/wishlist_screen.dart';
@@ -414,28 +416,33 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                 },
                 icon: const Icon(Icons.shopping_cart_outlined, size: 24, color: Color(0xFF1E293B)),
               ),
-              Positioned(
-                right: 6,
-                top: 6,
-                child: Container(
-                  padding: const EdgeInsets.all(3),
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                  child: Center(
-                    child: Text(
-                      '2',
-                      style: GoogleFonts.plusJakartaSans(
-                        color: Colors.white,
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w800,
-                        height: 1,
+              Consumer<CartProvider>(
+                builder: (context, cart, _) {
+                  if (cart.itemCount <= 0) return const SizedBox.shrink();
+                  return Positioned(
+                    right: 6,
+                    top: 6,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                      child: Center(
+                        child: Text(
+                          '${cart.itemCount}',
+                          style: GoogleFonts.plusJakartaSans(
+                            color: Colors.white,
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w800,
+                            height: 1,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
             ],
           ),
