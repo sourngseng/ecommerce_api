@@ -11,6 +11,7 @@ import '../../services/api_service.dart';
 import '../auth/login_screen.dart';
 import '../categories/categories_screen.dart';
 import '../products/category_products_screen.dart';
+import '../products/product_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -836,13 +837,35 @@ class _HomeScreenState extends State<HomeScreen> {
     required int reviews,
     required String imageUrl,
   }) {
-    return Container(
-      width: 152,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProductDetailScreen(
+              product: ProductModel(
+                id: 1,
+                name: title,
+                slug: title.toLowerCase().replaceAll(' ', '-'),
+                description: 'High performance device with advanced features and warranty.',
+                price: price,
+                discountPrice: oldPrice,
+                stock: 20,
+                rating: rating,
+                reviewsCount: reviews,
+                imageUrl: imageUrl,
+              ),
+            ),
+          ),
+        );
+      },
+      child: Container(
+        width: 152,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -983,8 +1006,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   // 7. Bottom Navigation Bar with 5 Tabs
   Widget _buildBottomNavigationBar() {

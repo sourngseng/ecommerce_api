@@ -276,4 +276,39 @@ class ApiService {
   Future<List<ProductModel>> getNewArrivals() async {
     return getProducts(sortBy: 'created_at', sortOrder: 'desc', perPage: 8);
   }
+
+  // 11. Get Single Product Details
+  Future<ProductModel?> getProductDetails(int id) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.productsEndpoint}/$id');
+      final response = await _client.get(url, headers: _getHeaders());
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['success'] == true && body['data'] != null) {
+          return ProductModel.fromJson(body['data']);
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  // 12. Add to Cart
+  Future<bool> addToCart(String? token, int productId, int quantity) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}/cart/items');
+      final response = await _client.post(
+        url,
+        headers: _getHeaders(token),
+        body: jsonEncode({
+          'product_id': productId,
+          'quantity': quantity,
+        }),
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final body = jsonDecode(response.body);
+        return body['success'] == true;
+      }
+    } catch (_) {}
+    return false;
+  }
 }

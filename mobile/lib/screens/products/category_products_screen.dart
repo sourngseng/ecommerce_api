@@ -4,6 +4,7 @@ import '../../core/theme/app_theme.dart';
 import '../../models/category_model.dart';
 import '../../models/product_model.dart';
 import '../../services/api_service.dart';
+import 'product_detail_screen.dart';
 
 class CategoryProductsScreen extends StatefulWidget {
   final CategoryModel? category;
@@ -777,19 +778,43 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
   }) {
     final bool isWishlisted = _wishlistIds.contains(id);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x05000000),
-            blurRadius: 8,
-            offset: Offset(0, 2),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProductDetailScreen(
+              productId: id,
+              product: ProductModel(
+                id: id,
+                name: name,
+                slug: name.toLowerCase().replaceAll(' ', '-'),
+                description: spec,
+                price: price,
+                discountPrice: oldPrice,
+                stock: 25,
+                rating: rating,
+                reviewsCount: reviews,
+                imageUrl: imageUrl,
+                tag: tag,
+              ),
+            ),
           ),
-        ],
-      ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x05000000),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -998,6 +1023,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
