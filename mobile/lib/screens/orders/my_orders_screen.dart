@@ -230,7 +230,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
 
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -252,6 +252,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
           label: 'VIEW CART',
           textColor: Colors.white,
           onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const CartScreen(showBackButton: true)),

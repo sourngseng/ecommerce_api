@@ -122,7 +122,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -145,6 +145,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           label: 'VIEW CART',
           textColor: Colors.white,
           onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
             Navigator.push(
               context,
               MaterialPageRoute(

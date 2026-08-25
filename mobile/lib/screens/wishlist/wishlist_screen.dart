@@ -171,7 +171,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
 
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -193,6 +193,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
           label: 'VIEW CART',
           textColor: Colors.white,
           onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const CartScreen(showBackButton: true)),
@@ -223,7 +224,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
 
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -243,6 +244,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
           label: 'OPEN CART',
           textColor: Colors.white,
           onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const CartScreen(showBackButton: true)),
