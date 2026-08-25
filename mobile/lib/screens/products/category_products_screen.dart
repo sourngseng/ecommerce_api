@@ -4,6 +4,7 @@ import '../../core/theme/app_theme.dart';
 import '../../models/category_model.dart';
 import '../../models/product_model.dart';
 import '../../services/api_service.dart';
+import '../cart/cart_screen.dart';
 import 'product_detail_screen.dart';
 
 class CategoryProductsScreen extends StatefulWidget {
@@ -395,7 +396,14 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
           Stack(
             children: [
               IconButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CartScreen(showBackButton: true),
+                    ),
+                  );
+                },
                 icon: const Icon(Icons.shopping_cart_outlined, size: 24, color: Color(0xFF1E293B)),
               ),
               Positioned(

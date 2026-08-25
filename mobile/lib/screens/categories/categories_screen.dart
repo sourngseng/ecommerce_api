@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/category_model.dart';
 import '../../services/api_service.dart';
+import '../cart/cart_screen.dart';
 import '../products/category_products_screen.dart';
 
 class CategoriesScreen extends StatefulWidget {
@@ -168,7 +169,14 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           Stack(
             children: [
               IconButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CartScreen(showBackButton: true),
+                    ),
+                  );
+                },
                 icon: const Icon(
                   Icons.shopping_cart_outlined,
                   size: 24,

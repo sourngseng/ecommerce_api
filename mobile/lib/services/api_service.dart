@@ -311,4 +311,104 @@ class ApiService {
     } catch (_) {}
     return false;
   }
+
+  // 13. Get Cart Details
+  Future<Map<String, dynamic>?> getCart(String? token) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}/cart');
+      final response = await _client.get(url, headers: _getHeaders(token));
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['success'] == true && body['data'] != null) {
+          return body['data'];
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  // 14. Update Cart Item Quantity
+  Future<bool> updateCartItemQuantity(String? token, int itemId, int quantity) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}/cart/items/$itemId');
+      final response = await _client.put(
+        url,
+        headers: _getHeaders(token),
+        body: jsonEncode({
+          'quantity': quantity,
+        }),
+      );
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body['success'] == true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  // 15. Remove Cart Item
+  Future<bool> removeCartItem(String? token, int itemId) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}/cart/items/$itemId');
+      final response = await _client.delete(url, headers: _getHeaders(token));
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body['success'] == true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  // 16. Clear Entire Cart
+  Future<bool> clearCart(String? token) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}/cart/clear');
+      final response = await _client.delete(url, headers: _getHeaders(token));
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body['success'] == true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  // 17. Apply Coupon Code
+  Future<ApiResponse<Map<String, dynamic>>> applyCoupon(String? token, String code) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}/cart/apply-coupon');
+      final response = await _client.post(
+        url,
+        headers: _getHeaders(token),
+        body: jsonEncode({
+          'code': code,
+        }),
+      );
+      final Map<String, dynamic> body = jsonDecode(response.body);
+      return ApiResponse(
+        success: response.statusCode == 200 && body['success'] == true,
+        message: body['message'] ?? (response.statusCode == 200 ? 'Coupon applied' : 'Invalid coupon'),
+        data: body['data'],
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      return ApiResponse(
+        success: false,
+        message: 'Error applying coupon: $e',
+        statusCode: 500,
+      );
+    }
+  }
+
+  // 18. Remove Coupon
+  Future<bool> removeCoupon(String? token) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}/cart/coupon');
+      final response = await _client.delete(url, headers: _getHeaders(token));
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body['success'] == true;
+      }
+    } catch (_) {}
+    return false;
+  }
 }

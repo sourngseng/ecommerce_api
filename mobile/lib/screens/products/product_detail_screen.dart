@@ -5,6 +5,7 @@ import '../../core/theme/app_theme.dart';
 import '../../models/product_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
+import '../cart/cart_screen.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final ProductModel? product;
@@ -127,7 +128,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         action: SnackBarAction(
           label: 'VIEW CART',
           textColor: Colors.white,
-          onPressed: () {},
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const CartScreen(showBackButton: true),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -254,7 +262,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     children: [
                       _buildFloatingCircleBtn(
                         icon: Icons.shopping_cart_outlined,
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const CartScreen(showBackButton: true),
+                            ),
+                          );
+                        },
                       ),
                       Positioned(
                         right: 0,

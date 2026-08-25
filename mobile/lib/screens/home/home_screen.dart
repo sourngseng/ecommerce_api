@@ -9,6 +9,7 @@ import '../../models/product_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
 import '../auth/login_screen.dart';
+import '../cart/cart_screen.dart';
 import '../categories/categories_screen.dart';
 import '../products/category_products_screen.dart';
 import '../products/product_detail_screen.dart';
@@ -1092,6 +1093,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildOtherTabs(int tabIndex, dynamic user) {
     if (tabIndex == 1) {
       return const CategoriesScreen();
+    }
+    if (tabIndex == 2) {
+      return const CartScreen();
     }
 
     final titles = ['Home', 'All Categories', 'My Shopping Cart', 'My Wishlist', 'My Account'];
