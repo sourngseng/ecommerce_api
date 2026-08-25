@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/product_model.dart';
 import '../../providers/auth_provider.dart';
-import '../../services/api_service.dart';
+import '../../providers/cart_provider.dart';
 import '../cart/cart_screen.dart';
 import '../products/product_detail_screen.dart';
 
@@ -21,7 +21,6 @@ class WishlistScreen extends StatefulWidget {
 }
 
 class _WishlistScreenState extends State<WishlistScreen> {
-  final ApiService _apiService = ApiService();
   final TextEditingController _searchController = TextEditingController();
 
   bool _isSearching = false;
@@ -156,7 +155,19 @@ class _WishlistScreenState extends State<WishlistScreen> {
 
   Future<void> _addToCart(Map<String, dynamic> item) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    await _apiService.addToCart(authProvider.token, item['id'], 1);
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+
+    await cartProvider.addToCart(
+      authProvider.token,
+      item['id'],
+      1,
+      productFallback: {
+        'name': item['name'],
+        'price': item['price'],
+        'image_url': item['imageUrl'],
+        'variant': item['spec'],
+      },
+    );
 
     if (!mounted) return;
 
@@ -194,8 +205,20 @@ class _WishlistScreenState extends State<WishlistScreen> {
 
   Future<void> _moveAllToCart() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+
     for (var item in _wishlistItems) {
-      await _apiService.addToCart(authProvider.token, item['id'], 1);
+      await cartProvider.addToCart(
+        authProvider.token,
+        item['id'],
+        1,
+        productFallback: {
+          'name': item['name'],
+          'price': item['price'],
+          'image_url': item['imageUrl'],
+          'variant': item['spec'],
+        },
+      );
     }
 
     if (!mounted) return;

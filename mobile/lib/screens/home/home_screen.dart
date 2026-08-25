@@ -7,6 +7,7 @@ import '../../models/banner_model.dart';
 import '../../models/category_model.dart';
 import '../../models/product_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/cart_provider.dart';
 import '../../services/api_service.dart';
 import '../cart/cart_screen.dart';
 import '../categories/categories_screen.dart';
@@ -1014,6 +1015,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // 7. Bottom Navigation Bar with 5 Tabs
   Widget _buildBottomNavigationBar() {
+    final cartProvider = Provider.of<CartProvider>(context);
+
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -1025,7 +1028,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           _buildNavItem(0, Icons.home_rounded, 'Home'),
           _buildNavItem(1, Icons.grid_view_rounded, 'Categories'),
-          _buildNavItem(2, Icons.shopping_cart_outlined, 'Cart', badgeCount: 2),
+          _buildNavItem(2, Icons.shopping_cart_outlined, 'Cart', badgeCount: cartProvider.itemCount > 0 ? cartProvider.itemCount : null),
           _buildNavItem(3, Icons.inventory_2_outlined, 'Orders'),
           _buildNavItem(4, Icons.person_outline_rounded, 'Account'),
         ],

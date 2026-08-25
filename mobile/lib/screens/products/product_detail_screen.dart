@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/product_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/cart_provider.dart';
 import '../../services/api_service.dart';
 import '../cart/cart_screen.dart';
 import '../checkout/checkout_screen.dart';
@@ -105,7 +106,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   Future<void> _handleAddToCart() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final success = await _apiService.addToCart(authProvider.token, _currentProduct.id, _quantity);
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+
+    final success = await cartProvider.addToCart(
+      authProvider.token,
+      _currentProduct.id,
+      _quantity,
+      productFallback: {
+        'name': _currentProduct.name,
+        'price': _currentProduct.effectivePrice,
+        'image_url': _currentProduct.imageUrl,
+        'variant': 'Selected Variant',
+      },
+    );
 
     if (!mounted) return;
 

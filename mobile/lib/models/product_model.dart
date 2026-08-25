@@ -40,6 +40,8 @@ class ProductModel {
     return null;
   }
 
+  double get effectivePrice => (discountPrice != null && discountPrice! > 0) ? discountPrice! : price;
+
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     String? img;
     if (json['primary_image'] != null && json['primary_image']['image_url'] != null) {

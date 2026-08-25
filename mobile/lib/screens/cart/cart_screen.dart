@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/cart_model.dart';
 import '../../providers/auth_provider.dart';
-import '../../services/api_service.dart';
+import '../../providers/cart_provider.dart';
 import '../checkout/checkout_screen.dart';
 
 class CartScreen extends StatefulWidget {
@@ -20,52 +20,17 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
-  final ApiService _apiService = ApiService();
   final TextEditingController _couponController = TextEditingController();
-
-  bool _isLoading = true;
   bool _isApplyingCoupon = false;
-  String? _appliedCoupon;
-  double _appliedDiscountAmount = 100.00;
-
-  // Rich fallback cart data matching the exact visual mockup
-  List<CartItemModel> _cartItems = [
-    CartItemModel(
-      id: 1,
-      productId: 101,
-      productName: 'MacBook Pro 14-inch (2023)',
-      variant: 'Space Gray, 512GB SSD',
-      unitPrice: 1299.00,
-      quantity: 1,
-      imageUrl: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300&auto=format&fit=crop&q=80',
-      inStock: true,
-    ),
-    CartItemModel(
-      id: 2,
-      productId: 102,
-      productName: 'Apple AirPods Pro 2',
-      variant: 'White',
-      unitPrice: 249.00,
-      quantity: 2,
-      imageUrl: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=300&auto=format&fit=crop&q=80',
-      inStock: true,
-    ),
-    CartItemModel(
-      id: 3,
-      productId: 103,
-      productName: 'Travel Backpack Premium',
-      variant: 'Black',
-      unitPrice: 44.99,
-      quantity: 1,
-      imageUrl: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300&auto=format&fit=crop&q=80',
-      inStock: true,
-    ),
-  ];
 
   @override
   void initState() {
     super.initState();
-    _fetchCart();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final cart = Provider.of<CartProvider>(context, listen: false);
+      cart.fetchCart(auth.token);
+    });
   }
 
   @override
@@ -74,88 +39,18 @@ class _CartScreenState extends State<CartScreen> {
     super.dispose();
   }
 
-  Future<void> _fetchCart() async {
-    setState(() => _isLoading = true);
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    try {
-      final cartData = await _apiService.getCart(authProvider.token);
-      if (mounted && cartData != null) {
-        final parsed = CartModel.fromJson(cartData);
-        if (parsed.items.isNotEmpty) {
-          setState(() {
-            _cartItems = parsed.items;
-            _appliedCoupon = parsed.couponCode;
-            _appliedDiscountAmount = parsed.discount;
-          });
-        }
-      }
-    } catch (_) {}
-    if (mounted) {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _updateQuantity(int index, int newQty) async {
-    if (newQty <= 0) {
-      _removeItem(index);
-      return;
-    }
-
-    final item = _cartItems[index];
-    setState(() {
-      item.quantity = newQty;
-    });
-
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    await _apiService.updateCartItemQuantity(authProvider.token, item.id, newQty);
-  }
-
-  Future<void> _removeItem(int index) async {
-    final item = _cartItems[index];
-    final removedItem = item;
-
-    setState(() {
-      _cartItems.removeAt(index);
-    });
-
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    await _apiService.removeCartItem(authProvider.token, item.id);
-
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Removed ${removedItem.productName} from cart'),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 3),
-        action: SnackBarAction(
-          label: 'UNDO',
-          textColor: AppColors.primary,
-          onPressed: () {
-            setState(() {
-              _cartItems.insert(index, removedItem);
-            });
-          },
-        ),
-      ),
-    );
-  }
-
-  Future<void> _applyCoupon() async {
+  Future<void> _handleApplyCoupon() async {
     final code = _couponController.text.trim();
     if (code.isEmpty) return;
 
     setState(() => _isApplyingCoupon = true);
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final res = await _apiService.applyCoupon(authProvider.token, code);
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final cart = Provider.of<CartProvider>(context, listen: false);
+
+    final res = await cart.applyCoupon(auth.token, code);
 
     if (!mounted) return;
-    setState(() {
-      _isApplyingCoupon = false;
-      _appliedCoupon = code.toUpperCase();
-      _appliedDiscountAmount = 100.00;
-    });
+    setState(() => _isApplyingCoupon = false);
 
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -164,9 +59,11 @@ class _CartScreenState extends State<CartScreen> {
           children: [
             const Icon(Icons.check_circle, color: Colors.white, size: 20),
             const SizedBox(width: 10),
-            Text(
-              res.success ? res.message : 'Coupon $code applied: -\$100.00 saved!',
-              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+            Expanded(
+              child: Text(
+                res.success ? res.message : 'Coupon $code applied: -\$100.00 saved!',
+                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+              ),
             ),
           ],
         ),
@@ -177,14 +74,36 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  double get _subtotal => _cartItems.fold(0.0, (sum, i) => sum + i.totalPrice);
-  double get _shipping => _subtotal >= 2000.0 ? 0.0 : 10.00;
-  double get _tax => _subtotal * 0.10;
-  double get _total => (_subtotal - _appliedDiscountAmount + _shipping + _tax).clamp(0.0, double.infinity);
-  int get _totalItemsCount => _cartItems.fold(0, (sum, i) => sum + i.quantity);
+  Future<void> _handleRemoveItem(CartItemModel item, int index) async {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final cart = Provider.of<CartProvider>(context, listen: false);
+
+    await cart.removeItem(auth.token, item.id);
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Removed ${item.productName} from cart'),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+        action: SnackBarAction(
+          label: 'UNDO',
+          textColor: AppColors.primary,
+          onPressed: () {
+            cart.restoreItem(item, index);
+          },
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final auth = Provider.of<AuthProvider>(context);
+    final cart = Provider.of<CartProvider>(context);
+
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFC),
       appBar: AppBar(
@@ -197,7 +116,7 @@ class _CartScreenState extends State<CartScreen> {
               )
             : null,
         title: Text(
-          'My Cart ($_totalItemsCount)',
+          'My Cart (${cart.itemCount})',
           style: GoogleFonts.plusJakartaSans(
             fontSize: 18,
             fontWeight: FontWeight.w800,
@@ -205,71 +124,94 @@ class _CartScreenState extends State<CartScreen> {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Cart edit mode activated'), behavior: SnackBarBehavior.floating),
-              );
-            },
-            child: Text(
-              'Edit',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 13.5,
-                fontWeight: FontWeight.w700,
-                color: AppColors.primary,
+          if (cart.items.isNotEmpty)
+            TextButton(
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Clear Shopping Cart?'),
+                    content: const Text('Are you sure you want to remove all items from your cart?'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+                      TextButton(
+                        onPressed: () {
+                          cart.clearCart(auth.token);
+                          Navigator.pop(context);
+                        },
+                        child: const Text('Clear All', style: TextStyle(color: Colors.red)),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              child: Text(
+                'Clear',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary,
+                ),
               ),
             ),
-          ),
           const SizedBox(width: 8),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-          : _cartItems.isEmpty
-              ? _buildEmptyCartView()
-              : SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
-                  child: Column(
-                    children: [
-                      // 1. Free Shipping Progress Banner
-                      _buildFreeShippingBanner(),
+      body: RefreshIndicator(
+        onRefresh: () => cart.fetchCart(auth.token),
+        color: AppColors.primary,
+        child: cart.isLoading && cart.items.isEmpty
+            ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+            : cart.items.isEmpty
+                ? _buildEmptyCartView()
+                : SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
+                    child: Column(
+                      children: [
+                        // 1. Free Shipping Progress Banner
+                        _buildFreeShippingBanner(cart.subtotal),
 
-                      const SizedBox(height: 14),
+                        const SizedBox(height: 14),
 
-                      // 2. Cart Item Cards List
-                      ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _cartItems.length,
-                        separatorBuilder: (context, index) => const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          return _buildCartItemCard(index);
-                        },
-                      ),
+                        // 2. Dynamic Cart Items List
+                        ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: cart.items.length,
+                          separatorBuilder: (context, index) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            return _buildCartItemCard(cart.items[index], index, auth.token, cart);
+                          },
+                        ),
 
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-                      // 3. Coupon / Promo Code Input Card
-                      _buildCouponCard(),
+                        // 3. Coupon / Promo Code Input Card
+                        _buildCouponCard(cart.couponCode),
 
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-                      // 4. Order Summary Card
-                      _buildOrderSummaryCard(),
+                        // 4. Dynamic Order Summary Card
+                        _buildOrderSummaryCard(cart),
 
-                      const SizedBox(height: 20),
+                        const SizedBox(height: 20),
 
-                      // 5. Proceed to Checkout Button
-                      _buildCheckoutButton(),
-                    ],
+                        // 5. Proceed to Checkout Button
+                        _buildCheckoutButton(cart),
+                      ],
+                    ),
                   ),
-                ),
+      ),
     );
   }
 
   // 1. Free Shipping Progress Banner
-  Widget _buildFreeShippingBanner() {
+  Widget _buildFreeShippingBanner(double subtotal) {
+    const double threshold = 2000.0;
+    final double remaining = (threshold - subtotal).clamp(0.0, threshold);
+    final bool hasFreeShipping = subtotal >= threshold;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
@@ -283,7 +225,9 @@ class _CartScreenState extends State<CartScreen> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'You are \$23.00 away from free shipping!',
+              hasFreeShipping
+                  ? 'Congratulations! You unlocked Free Shipping!'
+                  : 'You are \$${remaining.toStringAsFixed(2)} away from free shipping!',
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
@@ -298,9 +242,7 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   // 2. Cart Item Card
-  Widget _buildCartItemCard(int index) {
-    final item = _cartItems[index];
-
+  Widget _buildCartItemCard(CartItemModel item, int index, String? token, CartProvider cart) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -361,7 +303,7 @@ class _CartScreenState extends State<CartScreen> {
                       ),
                     ),
                     GestureDetector(
-                      onTap: () => _removeItem(index),
+                      onTap: () => _handleRemoveItem(item, index),
                       child: const Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFF94A3B8)),
                     ),
                   ],
@@ -434,7 +376,7 @@ class _CartScreenState extends State<CartScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        onPressed: () => _updateQuantity(index, item.quantity - 1),
+                        onPressed: () => cart.updateQuantity(token, item.id, item.quantity - 1),
                         icon: const Icon(Icons.remove_rounded, size: 14, color: Color(0xFF64748B)),
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                         constraints: const BoxConstraints(),
@@ -451,7 +393,7 @@ class _CartScreenState extends State<CartScreen> {
                         ),
                       ),
                       IconButton(
-                        onPressed: () => _updateQuantity(index, item.quantity + 1),
+                        onPressed: () => cart.updateQuantity(token, item.id, item.quantity + 1),
                         icon: const Icon(Icons.add_rounded, size: 14, color: Color(0xFF64748B)),
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                         constraints: const BoxConstraints(),
@@ -468,7 +410,11 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   // 3. Coupon / Promo Code Box
-  Widget _buildCouponCard() {
+  Widget _buildCouponCard(String? activeCoupon) {
+    if (activeCoupon != null && _couponController.text.isEmpty) {
+      _couponController.text = activeCoupon;
+    }
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -492,7 +438,7 @@ class _CartScreenState extends State<CartScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Have a coupon?',
+                  activeCoupon != null ? 'Coupon Applied' : 'Have a coupon?',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w800,
@@ -500,7 +446,7 @@ class _CartScreenState extends State<CartScreen> {
                   ),
                 ),
                 Text(
-                  'Enter your coupon code',
+                  activeCoupon != null ? 'Code: $activeCoupon' : 'Enter your coupon code',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 10.5,
                     color: const Color(0xFF94A3B8),
@@ -537,7 +483,7 @@ class _CartScreenState extends State<CartScreen> {
           ),
           const SizedBox(width: 8),
           ElevatedButton(
-            onPressed: _isApplyingCoupon ? null : _applyCoupon,
+            onPressed: _isApplyingCoupon ? null : _handleApplyCoupon,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               minimumSize: const Size(60, 38),
@@ -560,8 +506,8 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  // 4. Order Summary Card
-  Widget _buildOrderSummaryCard() {
+  // 4. Dynamic Order Summary Card
+  Widget _buildOrderSummaryCard(CartProvider cart) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -571,17 +517,17 @@ class _CartScreenState extends State<CartScreen> {
       ),
       child: Column(
         children: [
-          _buildSummaryRow('Subtotal ($_totalItemsCount items)', '\$${_subtotal.toStringAsFixed(2)}'),
+          _buildSummaryRow('Subtotal (${cart.itemCount} items)', '\$${cart.subtotal.toStringAsFixed(2)}'),
           const SizedBox(height: 10),
           _buildSummaryRow(
-            _appliedCoupon != null ? 'Discount ($_appliedCoupon)' : 'Discount',
-            '- \$${_appliedDiscountAmount.toStringAsFixed(2)}',
+            cart.couponCode != null ? 'Discount (${cart.couponCode})' : 'Discount',
+            '- \$${cart.discount.toStringAsFixed(2)}',
             valueColor: const Color(0xFF16A34A),
           ),
           const SizedBox(height: 10),
-          _buildSummaryRow('Shipping', '\$${_shipping.toStringAsFixed(2)}'),
+          _buildSummaryRow('Shipping', '\$${cart.shipping.toStringAsFixed(2)}'),
           const SizedBox(height: 10),
-          _buildSummaryRow('Tax (10%)', '\$${_tax.toStringAsFixed(2)}'),
+          _buildSummaryRow('Tax (10%)', '\$${cart.tax.toStringAsFixed(2)}'),
           const SizedBox(height: 12),
           const Divider(height: 1, color: Color(0xFFE2E8F0)),
           const SizedBox(height: 12),
@@ -597,7 +543,7 @@ class _CartScreenState extends State<CartScreen> {
                 ),
               ),
               Text(
-                '\$${_total.toStringAsFixed(2)}',
+                '\$${cart.total.toStringAsFixed(2)}',
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
@@ -652,7 +598,7 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   // 5. Proceed to Checkout Button
-  Widget _buildCheckoutButton() {
+  Widget _buildCheckoutButton(CartProvider cart) {
     return Column(
       children: [
         ElevatedButton(
@@ -661,10 +607,10 @@ class _CartScreenState extends State<CartScreen> {
               context,
               MaterialPageRoute(
                 builder: (context) => CheckoutScreen(
-                  subtotal: _subtotal,
-                  discount: _appliedDiscountAmount,
-                  couponCode: _appliedCoupon,
-                  totalItems: _totalItemsCount,
+                  subtotal: cart.subtotal,
+                  discount: cart.discount,
+                  couponCode: cart.couponCode,
+                  totalItems: cart.itemCount,
                 ),
               ),
             );
