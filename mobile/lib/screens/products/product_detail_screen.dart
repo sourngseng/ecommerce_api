@@ -6,6 +6,7 @@ import '../../models/product_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
 import '../cart/cart_screen.dart';
+import '../checkout/checkout_screen.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final ProductModel? product;
@@ -1079,10 +1080,21 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           // Buy Now (Solid Orange)
           Expanded(
             child: ElevatedButton(
-              onPressed: () {
-                _handleAddToCart();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Proceeding to Checkout...'), behavior: SnackBarBehavior.floating),
+              onPressed: () async {
+                await _handleAddToCart();
+                if (!mounted) return;
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CheckoutScreen(
+                      subtotal: _currentProduct.price * _quantity,
+                      discount: _currentProduct.discountPrice != null
+                          ? (_currentProduct.discountPrice! - _currentProduct.price) * _quantity
+                          : 50.00,
+                      couponCode: 'DIRECTBUY',
+                      totalItems: _quantity,
+                    ),
+                  ),
                 );
               },
               style: ElevatedButton.styleFrom(

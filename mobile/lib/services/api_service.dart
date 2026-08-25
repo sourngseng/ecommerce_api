@@ -411,4 +411,44 @@ class ApiService {
     } catch (_) {}
     return false;
   }
+
+  // 19. Place Order / Checkout
+  Future<ApiResponse<Map<String, dynamic>>> createOrder({
+    required String? token,
+    required Map<String, dynamic> shippingAddress,
+    required String shippingMethod,
+    required String paymentMethod,
+    String? couponCode,
+    String? notes,
+  }) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}/orders');
+      final response = await _client.post(
+        url,
+        headers: _getHeaders(token),
+        body: jsonEncode({
+          'shipping_address': shippingAddress,
+          'shipping_method': shippingMethod,
+          'payment_method': paymentMethod,
+          'coupon_code': couponCode,
+          'notes': notes,
+        }),
+      );
+
+      final Map<String, dynamic> body = jsonDecode(response.body);
+
+      return ApiResponse(
+        success: (response.statusCode == 200 || response.statusCode == 201) && body['success'] == true,
+        message: body['message'] ?? (response.statusCode == 201 ? 'Order placed successfully!' : 'Order failed'),
+        data: body['data'],
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      return ApiResponse(
+        success: false,
+        message: 'Checkout error: $e',
+        statusCode: 500,
+      );
+    }
+  }
 }

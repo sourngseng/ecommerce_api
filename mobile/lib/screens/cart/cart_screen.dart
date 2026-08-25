@@ -5,6 +5,7 @@ import '../../core/theme/app_theme.dart';
 import '../../models/cart_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
+import '../checkout/checkout_screen.dart';
 
 class CartScreen extends StatefulWidget {
   final bool showBackButton;
@@ -652,11 +653,15 @@ class _CartScreenState extends State<CartScreen> {
       children: [
         ElevatedButton(
           onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Proceeding to Checkout with \$${_total.toStringAsFixed(2)}...'),
-                backgroundColor: AppColors.primary,
-                behavior: SnackBarBehavior.floating,
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CheckoutScreen(
+                  subtotal: _subtotal,
+                  discount: _appliedDiscountAmount,
+                  couponCode: _appliedCoupon,
+                  totalItems: _totalItemsCount,
+                ),
               ),
             );
           },
