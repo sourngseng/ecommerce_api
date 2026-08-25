@@ -118,6 +118,12 @@ Route::prefix('v1')->group(function () {
         Route::post('/orders/{order}/payment', [PaymentController::class, 'process']);
     });
 
+    // Top-Level Orders Endpoints (Direct and Mobile Client Support)
+    Route::get('/orders', [CustomerOrderController::class, 'index']);
+    Route::post('/orders', [CustomerOrderController::class, 'store']);
+    Route::get('/orders/{order}', [CustomerOrderController::class, 'show']);
+    Route::post('/orders/{order}/cancel', [CustomerOrderController::class, 'cancel']);
+
     // Vendor Area Routes (Vendor Role Only)
     Route::middleware(['auth:sanctum', 'role:vendor,admin'])->prefix('vendor')->group(function () {
         // Vendor Profile

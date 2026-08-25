@@ -466,8 +466,12 @@ class ApiService {
       final response = await _client.get(url, headers: _getHeaders(token));
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
-        if (body['success'] == true && body['data'] is List) {
-          return List<Map<String, dynamic>>.from(body['data']);
+        if (body['success'] == true) {
+          if (body['data'] is List) {
+            return List<Map<String, dynamic>>.from(body['data']);
+          } else if (body['data'] is Map && body['data']['data'] is List) {
+            return List<Map<String, dynamic>>.from(body['data']['data']);
+          }
         }
       }
     } catch (_) {}
