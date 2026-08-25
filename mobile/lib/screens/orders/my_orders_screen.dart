@@ -6,8 +6,8 @@ import '../../models/order_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../services/api_service.dart';
-import '../../widgets/product_review_modal.dart';
 import '../cart/cart_screen.dart';
+import '../reviews/write_review_screen.dart';
 
 class MyOrdersScreen extends StatefulWidget {
   final bool showBackButton;
@@ -755,158 +755,31 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
   }
 
   void _showOrderReviewSelector(OrderModel order) {
-    if (order.items.isEmpty) {
-      ProductReviewModal.show(
-        context,
+    final reviewItems = order.items.map((i) => ReviewItemData(
+      productId: i.productId,
+      productName: i.productName,
+      imageUrl: i.imageUrl,
+      price: i.unitPrice,
+      quantity: i.quantity,
+    )).toList();
+
+    if (reviewItems.isEmpty) {
+      reviewItems.add(ReviewItemData(
         productId: 1,
-        productName: 'Ordered Item',
+        productName: 'Ordered Product',
         price: order.total,
-      );
-      return;
+        quantity: 1,
+      ));
     }
 
-    if (order.items.length == 1) {
-      final item = order.items.first;
-      ProductReviewModal.show(
-        context,
-        productId: item.productId,
-        productName: item.productName,
-        imageUrl: item.imageUrl,
-        price: item.unitPrice,
-      );
-      return;
-    }
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE2E8F0),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Rate Products in Order #${order.orderNumber}',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 16.5,
-                  fontWeight: FontWeight.w800,
-                  color: const Color(0xFF111827),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Select a product to write your review:',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 12,
-                  color: const Color(0xFF64748B),
-                ),
-              ),
-              const SizedBox(height: 14),
-              ...order.items.map((item) {
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: item.imageUrl != null
-                              ? Image.network(
-                                  item.imageUrl!,
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      const Icon(Icons.inventory_2_outlined, color: Colors.grey),
-                                )
-                              : const Icon(Icons.inventory_2_outlined, color: Colors.grey),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              item.productName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF111827),
-                              ),
-                            ),
-                            Text(
-                              '\$${item.unitPrice.toStringAsFixed(2)} · Qty: ${item.quantity}',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          ProductReviewModal.show(
-                            context,
-                            productId: item.productId,
-                            productName: item.productName,
-                            imageUrl: item.imageUrl,
-                            price: item.unitPrice,
-                          );
-                        },
-                        icon: const Icon(Icons.star_rounded, size: 15, color: Colors.white),
-                        label: Text(
-                          'Rate',
-                          style: GoogleFonts.plusJakartaSans(fontSize: 11.5, fontWeight: FontWeight.w800, color: Colors.white),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFF59E0B),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }),
-            ],
-          ),
-        );
-      },
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => WriteReviewScreen(
+          orderNumber: order.orderNumber,
+          items: reviewItems,
+        ),
+      ),
     );
   }
 
@@ -971,16 +844,10 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
                       TextButton.icon(
                         onPressed: () {
                           Navigator.pop(context);
-                          ProductReviewModal.show(
-                            context,
-                            productId: item.productId,
-                            productName: item.productName,
-                            imageUrl: item.imageUrl,
-                            price: item.unitPrice,
-                          );
+                          _showOrderReviewSelector(order);
                         },
                         icon: const Icon(Icons.star_rounded, size: 14, color: Color(0xFFF59E0B)),
-                        label: Text('Rate', style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.bold, color: const Color(0xFFF59E0B))),
+                        label: Text('Rate & Review', style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.bold, color: const Color(0xFFF59E0B))),
                       ),
                     ],
                   ),
