@@ -123,10 +123,12 @@ class _CartScreenState extends State<CartScreen> {
 
     if (!mounted) return;
 
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Removed ${removedItem.productName} from cart'),
         behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
         action: SnackBarAction(
           label: 'UNDO',
           textColor: AppColors.primary,
@@ -155,6 +157,7 @@ class _CartScreenState extends State<CartScreen> {
       _appliedDiscountAmount = 100.00;
     });
 
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -169,6 +172,7 @@ class _CartScreenState extends State<CartScreen> {
         ),
         backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
       ),
     );
   }

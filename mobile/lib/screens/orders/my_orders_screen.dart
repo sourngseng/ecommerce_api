@@ -161,11 +161,13 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
       order['status_desc'] = 'This order has been cancelled.';
     });
 
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Order #${order['order_number']} cancelled successfully'),
         backgroundColor: Colors.redAccent,
         behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
       ),
     );
   }

@@ -109,6 +109,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
     if (!mounted) return;
 
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -125,6 +126,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         ),
         backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         action: SnackBarAction(
           label: 'VIEW CART',

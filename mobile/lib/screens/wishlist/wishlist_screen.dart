@@ -135,10 +135,12 @@ class _WishlistScreenState extends State<WishlistScreen> {
       _wishlistItems.removeAt(index);
     });
 
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Removed ${removed['name']} from wishlist'),
         behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
         action: SnackBarAction(
           label: 'UNDO',
           textColor: AppColors.primary,
@@ -158,6 +160,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
 
     if (!mounted) return;
 
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -174,6 +177,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
         ),
         backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
         action: SnackBarAction(
           label: 'VIEW CART',
           textColor: Colors.white,
@@ -196,6 +200,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
 
     if (!mounted) return;
 
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -210,6 +215,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
         ),
         backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
         action: SnackBarAction(
           label: 'OPEN CART',
           textColor: Colors.white,
