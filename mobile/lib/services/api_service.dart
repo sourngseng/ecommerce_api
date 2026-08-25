@@ -451,4 +451,37 @@ class ApiService {
       );
     }
   }
+
+  // 20. Get User Orders
+  Future<List<Map<String, dynamic>>> getMyOrders(String? token, {String? status}) async {
+    try {
+      final uri = Uri.parse('${ApiConstants.baseUrl}/orders');
+      final queryParams = <String, String>{};
+      if (status != null && status.isNotEmpty && status != 'all') {
+        queryParams['status'] = status;
+      }
+      final url = uri.replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
+      final response = await _client.get(url, headers: _getHeaders(token));
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['success'] == true && body['data'] is List) {
+          return List<Map<String, dynamic>>.from(body['data']);
+        }
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  // 21. Cancel Order
+  Future<bool> cancelOrder(String? token, int orderId) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}/orders/$orderId/cancel');
+      final response = await _client.post(url, headers: _getHeaders(token));
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body['success'] == true;
+      }
+    } catch (_) {}
+    return false;
+  }
 }

@@ -11,9 +11,9 @@ import '../../services/api_service.dart';
 import '../auth/login_screen.dart';
 import '../cart/cart_screen.dart';
 import '../categories/categories_screen.dart';
+import '../orders/my_orders_screen.dart';
 import '../products/category_products_screen.dart';
 import '../products/product_detail_screen.dart';
-import '../wishlist/wishlist_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -1026,7 +1026,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildNavItem(0, Icons.home_rounded, 'Home'),
           _buildNavItem(1, Icons.grid_view_rounded, 'Categories'),
           _buildNavItem(2, Icons.shopping_cart_outlined, 'Cart', badgeCount: 2),
-          _buildNavItem(3, Icons.favorite_border_rounded, 'Wishlist'),
+          _buildNavItem(3, Icons.inventory_2_outlined, 'Orders'),
           _buildNavItem(4, Icons.person_outline_rounded, 'Account'),
         ],
       ),
@@ -1090,7 +1090,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Alternate Tab Views (Categories, Cart, Wishlist, Account)
+  // Alternate Tab Views (Categories, Cart, Orders, Account)
   Widget _buildOtherTabs(int tabIndex, dynamic user) {
     if (tabIndex == 1) {
       return const CategoriesScreen();
@@ -1099,7 +1099,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return const CartScreen();
     }
     if (tabIndex == 3) {
-      return const WishlistScreen();
+      return const MyOrdersScreen();
     }
 
     final titles = ['Home', 'All Categories', 'My Shopping Cart', 'My Wishlist', 'My Account'];
