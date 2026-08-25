@@ -29,16 +29,19 @@ class CartProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final cartData = await _apiService.getCart(token);
-      if (cartData != null) {
-        _cart = CartModel.fromJson(cartData);
+      if (token != null && token.isNotEmpty) {
+        final cartData = await _apiService.getCart(token);
+        if (cartData != null) {
+          _cart = CartModel.fromJson(cartData);
+        } else {
+          _cart ??= _getEmptyCart();
+        }
       } else {
-        // If no cart on backend yet or guest mode, keep current or seed
-        _cart ??= _getInitialFallbackCart();
+        _cart ??= _getEmptyCart();
       }
     } catch (e) {
       _errorMessage = 'Failed to load cart: $e';
-      _cart ??= _getInitialFallbackCart();
+      _cart ??= _getEmptyCart();
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -47,15 +50,21 @@ class CartProvider with ChangeNotifier {
 
   // 2. Add product to cart via API
   Future<bool> addToCart(String? token, int productId, int quantity, {Map<String, dynamic>? productFallback}) async {
-    bool success = await _apiService.addToCart(token, productId, quantity);
-
+    bool success = false;
     if (token != null && token.isNotEmpty) {
-      // Re-fetch latest cart from API
-      await fetchCart(token);
+      success = await _apiService.addToCart(token, productId, quantity);
+      if (success) {
+        await fetchCart(token);
+      } else {
+        _addItemLocally(productId, quantity, productFallback);
+        notifyListeners();
+        success = true;
+      }
     } else {
       // Offline / guest mode local addition
       _addItemLocally(productId, quantity, productFallback);
       notifyListeners();
+      success = true;
     }
 
     return success;
@@ -177,19 +186,26 @@ class CartProvider with ChangeNotifier {
   }
 
   void _addItemLocally(int productId, int quantity, Map<String, dynamic>? productFallback) {
+    _cart ??= _getEmptyCart();
+
     final existingIndex = items.indexWhere((i) => i.productId == productId);
     if (existingIndex != -1) {
       items[existingIndex].quantity += quantity;
     } else {
+      final double price = double.tryParse(productFallback?['price']?.toString() ?? '99.00') ?? 99.00;
+      final String name = productFallback?['name'] ?? 'Product #$productId';
+      final String? image = productFallback?['image_url'];
+      final String variant = productFallback?['variant'] ?? 'Standard';
+
       items.add(
         CartItemModel(
           id: DateTime.now().millisecondsSinceEpoch,
           productId: productId,
-          productName: productFallback?['name'] ?? 'Product #$productId',
-          variant: productFallback?['variant'] ?? 'Space Gray, 512GB SSD',
-          unitPrice: productFallback?['price'] ?? 1299.00,
+          productName: name,
+          variant: variant,
+          unitPrice: price,
           quantity: quantity,
-          imageUrl: productFallback?['image_url'] ?? 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300&auto=format&fit=crop&q=80',
+          imageUrl: image ?? 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&auto=format&fit=crop&q=80',
           inStock: true,
         ),
       );
@@ -197,48 +213,14 @@ class CartProvider with ChangeNotifier {
     _recalculateTotals();
   }
 
-  CartModel _getInitialFallbackCart() {
-    final initialItems = [
-      CartItemModel(
-        id: 1,
-        productId: 101,
-        productName: 'MacBook Pro 14-inch (2023)',
-        variant: 'Space Gray, 512GB SSD',
-        unitPrice: 1299.00,
-        quantity: 1,
-        imageUrl: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300&auto=format&fit=crop&q=80',
-        inStock: true,
-      ),
-      CartItemModel(
-        id: 2,
-        productId: 102,
-        productName: 'Apple AirPods Pro 2',
-        variant: 'White',
-        unitPrice: 249.00,
-        quantity: 2,
-        imageUrl: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=300&auto=format&fit=crop&q=80',
-        inStock: true,
-      ),
-      CartItemModel(
-        id: 3,
-        productId: 103,
-        productName: 'Travel Backpack Premium',
-        variant: 'Black',
-        unitPrice: 44.99,
-        quantity: 1,
-        imageUrl: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300&auto=format&fit=crop&q=80',
-        inStock: true,
-      ),
-    ];
-
+  CartModel _getEmptyCart() {
     return CartModel(
-      items: initialItems,
-      subtotal: 1841.99,
-      discount: 100.00,
-      shipping: 10.00,
-      tax: 175.20,
-      total: 1927.19,
-      couponCode: 'WELCOME10',
+      items: [],
+      subtotal: 0.0,
+      discount: 0.0,
+      shipping: 0.0,
+      tax: 0.0,
+      total: 0.0,
     );
   }
 }

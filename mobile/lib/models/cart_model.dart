@@ -54,10 +54,10 @@ class CartItemModel {
       id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       productId: json['product_id'] is int ? json['product_id'] : int.tryParse(json['product_id']?.toString() ?? '0') ?? 0,
       productName: name,
-      variant: json['variant'] ?? (name.contains('MacBook') ? 'Space Gray, 512GB SSD' : (name.contains('AirPods') ? 'White' : 'Standard')),
+      variant: json['variant'] ?? 'Standard',
       unitPrice: price,
       quantity: json['quantity'] is int ? json['quantity'] : int.tryParse(json['quantity']?.toString() ?? '1') ?? 1,
-      imageUrl: img ?? 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300&auto=format&fit=crop&q=80',
+      imageUrl: img ?? 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&auto=format&fit=crop&q=80',
       inStock: stockQty > 0,
     );
   }

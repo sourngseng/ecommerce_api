@@ -588,6 +588,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final List<Map<String, dynamic>> fallbackProducts = [
       {
+        'id': 2,
         'title': 'Wireless Earbuds Pro 2',
         'price': 39.99,
         'old_price': 49.99,
@@ -597,6 +598,7 @@ class _HomeScreenState extends State<HomeScreen> {
         'image': 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=300&auto=format&fit=crop&q=80',
       },
       {
+        'id': 3,
         'title': 'Smart Watch Series 9',
         'price': 229.00,
         'old_price': 269.00,
@@ -606,6 +608,7 @@ class _HomeScreenState extends State<HomeScreen> {
         'image': 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&auto=format&fit=crop&q=80',
       },
       {
+        'id': 4,
         'title': 'Travel Backpack Premium',
         'price': 44.99,
         'old_price': 59.90,
@@ -615,6 +618,7 @@ class _HomeScreenState extends State<HomeScreen> {
         'image': 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300&auto=format&fit=crop&q=80',
       },
       {
+        'id': 5,
         'title': 'Running Shoes Sporty',
         'price': 55.99,
         'old_price': 79.99,
@@ -691,6 +695,7 @@ class _HomeScreenState extends State<HomeScreen> {
               if (_flashSaleProducts.isNotEmpty && index < _flashSaleProducts.length) {
                 final p = _flashSaleProducts[index];
                 return _buildProductCard(
+                  id: p.id,
                   title: p.name,
                   price: p.price,
                   oldPrice: p.discountPrice != null ? p.price * 1.2 : null,
@@ -702,6 +707,7 @@ class _HomeScreenState extends State<HomeScreen> {
               } else {
                 final fp = fallbackProducts[index];
                 return _buildProductCard(
+                  id: fp['id'] as int? ?? (index + 2),
                   title: fp['title'],
                   price: fp['price'],
                   oldPrice: fp['old_price'],
@@ -832,6 +838,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Common Product Card Widget
   Widget _buildProductCard({
+    int id = 1,
     required String title,
     required double price,
     double? oldPrice,
@@ -846,8 +853,9 @@ class _HomeScreenState extends State<HomeScreen> {
           context,
           MaterialPageRoute(
             builder: (context) => ProductDetailScreen(
+              productId: id,
               product: ProductModel(
-                id: 1,
+                id: id,
                 name: title,
                 slug: title.toLowerCase().replaceAll(' ', '-'),
                 description: 'High performance device with advanced features and warranty.',
