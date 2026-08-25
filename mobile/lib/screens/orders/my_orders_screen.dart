@@ -9,10 +9,12 @@ import '../cart/cart_screen.dart';
 
 class MyOrdersScreen extends StatefulWidget {
   final bool showBackButton;
+  final int initialTabIndex;
 
   const MyOrdersScreen({
     super.key,
     this.showBackButton = false,
+    this.initialTabIndex = 0,
   });
 
   @override
@@ -23,7 +25,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
   final ApiService _apiService = ApiService();
   final TextEditingController _searchController = TextEditingController();
 
-  int _selectedTabIdx = 0;
+  late int _selectedTabIdx;
   bool _isLoading = true;
   bool _isSearching = false;
   String _searchQuery = '';
@@ -104,6 +106,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedTabIdx = widget.initialTabIndex;
     _fetchOrders();
   }
 
