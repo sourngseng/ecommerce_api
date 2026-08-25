@@ -13,6 +13,8 @@ class CategoryModel {
     this.productsCount,
   });
 
+  String? get imageUrl => image;
+
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
     return CategoryModel(
       id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
