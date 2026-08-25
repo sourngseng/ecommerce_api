@@ -15,6 +15,8 @@ import '../orders/my_orders_screen.dart';
 import '../products/category_products_screen.dart';
 import '../products/product_detail_screen.dart';
 import '../profile/profile_screen.dart';
+import '../search/scan_search_screen.dart';
+import '../search/search_product_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -38,11 +40,87 @@ class _HomeScreenState extends State<HomeScreen> {
   late Timer _countdownTimer;
   Duration _timeLeft = const Duration(hours: 2, minutes: 18, seconds: 45);
 
+  // Banner Slider Controller & Auto-Advance Timer
+  final PageController _bannerPageController = PageController();
+  int _currentBannerIndex = 0;
+  Timer? _bannerSliderTimer;
+
   @override
   void initState() {
     super.initState();
     _fetchHomeData();
     _startTimer();
+    _startBannerSliderTimer();
+  }
+
+  void _startBannerSliderTimer() {
+    _bannerSliderTimer?.cancel();
+    _bannerSliderTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (_bannerPageController.hasClients) {
+        final totalBanners = _getEffectiveBanners().length;
+        if (totalBanners > 1) {
+          final nextIndex = (_currentBannerIndex + 1) % totalBanners;
+          _bannerPageController.animateToPage(
+            nextIndex,
+            duration: const Duration(milliseconds: 550),
+            curve: Curves.easeInOutCubic,
+          );
+        }
+      }
+    });
+  }
+
+  List<Map<String, dynamic>> _getEffectiveBanners() {
+    if (_banners.isNotEmpty) {
+      return _banners.map((b) => {
+        'tag': 'SPECIAL OFFER',
+        'title': b.title,
+        'subtitle': b.subtitle ?? 'On selected top items',
+        'buttonText': b.buttonText ?? 'Shop Now',
+        'imageUrl': b.imageUrl,
+        'discount': '50%\nOFF',
+        'colors': [const Color(0xFFFFF0E8), const Color(0xFFFFE3D6)],
+      }).toList();
+    }
+
+    return [
+      {
+        'tag': 'SPECIAL OFFER',
+        'title': 'Khmer New Year Mega Tech Expo',
+        'subtitle': 'Save up to 50% on top smartphones, laptops & gadgets',
+        'buttonText': 'Shop Electronics',
+        'imageUrl': 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300&auto=format&fit=crop&q=80',
+        'discount': '50%\nOFF',
+        'colors': [const Color(0xFFFFF0E8), const Color(0xFFFFE3D6)],
+      },
+      {
+        'tag': 'APPLE KEYNOTE DEALS',
+        'title': 'iPhone 15 & MacBook Pro M3',
+        'subtitle': 'Official Apple warranty with instant \$150 discount coupon',
+        'buttonText': 'Explore Apple',
+        'imageUrl': 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300&auto=format&fit=crop&q=80',
+        'discount': '30%\nOFF',
+        'colors': [const Color(0xFFEFF6FF), const Color(0xFFDBEAFE)],
+      },
+      {
+        'tag': 'PREMIUM SOUND',
+        'title': 'Sony WH-1000XM5 Wireless ANC',
+        'subtitle': 'Studio sound clarity & industry leading noise cancelling',
+        'buttonText': 'Shop Audio',
+        'imageUrl': 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300&auto=format&fit=crop&q=80',
+        'discount': '40%\nOFF',
+        'colors': [const Color(0xFFF5F3FF), const Color(0xFFEDE9FE)],
+      },
+      {
+        'tag': 'SPORT & LIFESTYLE',
+        'title': 'Nike Air Max Running Collection',
+        'subtitle': 'Maximum lightweight comfort for runners and street style',
+        'buttonText': 'Shop Footwear',
+        'imageUrl': 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300&auto=format&fit=crop&q=80',
+        'discount': '35%\nOFF',
+        'colors': [const Color(0xFFECFDF5), const Color(0xFFD1FAE5)],
+      },
+    ];
   }
 
   void _startTimer() {
@@ -88,6 +166,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _countdownTimer.cancel();
+    _bannerSliderTimer?.cancel();
+    _bannerPageController.dispose();
     super.dispose();
   }
 
@@ -263,7 +343,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // 2. Modern Search Bar
+  // 2. Modern Interactive Search Bar
   Widget _buildSearchBar() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -280,176 +360,246 @@ class _HomeScreenState extends State<HomeScreen> {
             const Icon(Icons.search_rounded, size: 20, color: Color(0xFF94A3B8)),
             const SizedBox(width: 10),
             Expanded(
-              child: Text(
-                'Search for products, brands and more...',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 13,
-                  color: const Color(0xFF94A3B8),
-                  fontWeight: FontWeight.w400,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SearchProductScreen()),
+                  );
+                },
+                child: Text(
+                  'Search for products, brands and more...',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    color: const Color(0xFF94A3B8),
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
               ),
             ),
-            const Icon(Icons.qr_code_scanner_rounded, size: 20, color: Color(0xFF64748B)),
+            IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ScanSearchScreen()),
+                );
+              },
+              icon: const Icon(Icons.qr_code_scanner_rounded, size: 20, color: AppColors.primary),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
           ],
         ),
       ),
     );
   }
 
-  // 3. Hero Promo Banner Slider
+  // 3. Hero Promo Banner Slider (Swipeable & Auto-Sliding)
   Widget _buildHeroBannerSlider() {
-    final banner = _banners.isNotEmpty ? _banners.first : null;
+    final bannerList = _getEffectiveBanners();
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            height: 155,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFFFF0E8), Color(0xFFFFE3D6)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Stack(
-              children: [
-                // Text Content
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'SPECIAL OFFER',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.primary,
-                          letterSpacing: 0.6,
-                        ),
+    return Column(
+      children: [
+        SizedBox(
+          height: 160,
+          child: PageView.builder(
+            controller: _bannerPageController,
+            physics: const BouncingScrollPhysics(),
+            itemCount: bannerList.length,
+            onPageChanged: (idx) {
+              setState(() => _currentBannerIndex = idx);
+            },
+            itemBuilder: (context, index) {
+              final banner = bannerList[index];
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: GestureDetector(
+                  onTap: () {
+                    final queryWords = (banner['title'] as String).split(' ').take(2).join(' ');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SearchProductScreen(initialQuery: queryWords),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        banner?.title.isNotEmpty == true ? banner!.title : 'Up to 50% OFF',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                          color: const Color(0xFF111827),
-                          letterSpacing: -0.5,
-                        ),
+                    );
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: (banner['colors'] as List<Color>?) ?? [const Color(0xFFFFF0E8), const Color(0xFFFFE3D6)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        banner?.subtitle?.isNotEmpty == true ? banner!.subtitle! : 'On selected items',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF64748B),
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x08000000),
+                          blurRadius: 8,
+                          offset: Offset(0, 2),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(20),
+                      ],
+                    ),
+                    child: Stack(
+                      children: [
+                        // Left Text Content
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  banner['tag'] ?? 'SPECIAL OFFER',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.primary,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                              SizedBox(
+                                width: 175,
+                                child: Text(
+                                  banner['title'] ?? 'Mega Tech Expo',
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w900,
+                                    color: const Color(0xFF111827),
+                                    letterSpacing: -0.4,
+                                    height: 1.15,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              SizedBox(
+                                width: 175,
+                                child: Text(
+                                  banner['subtitle'] ?? 'Save up to 50% today',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                    color: const Color(0xFF64748B),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Color(0x33FF6600),
+                                      blurRadius: 4,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      banner['buttonText'] ?? 'Shop Now',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        color: Colors.white,
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 11),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              banner?.buttonText ?? 'Shop Now',
-                              style: GoogleFonts.plusJakartaSans(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
+
+                        // Right Image Showcase
+                        Positioned(
+                          right: 12,
+                          top: 12,
+                          bottom: 12,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: banner['imageUrl'] != null && (banner['imageUrl'] as String).isNotEmpty
+                                ? Image.network(
+                                    banner['imageUrl'] as String,
+                                    width: 125,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) => _buildFallbackBannerGraphics(),
+                                  )
+                                : _buildFallbackBannerGraphics(),
+                          ),
+                        ),
+
+                        // Discount badge sticker
+                        if (banner['discount'] != null)
+                          Positioned(
+                            right: 14,
+                            top: 10,
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: const BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                banner['discount'] as String,
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                  height: 1.1,
+                                ),
                               ),
                             ),
-                            const SizedBox(width: 4),
-                            const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 12),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Right Image Showcase
-                Positioned(
-                  right: 10,
-                  top: 10,
-                  bottom: 10,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: banner?.imageUrl.isNotEmpty == true
-                        ? Image.network(
-                            banner!.imageUrl,
-                            width: 140,
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) => _buildFallbackBannerGraphics(),
-                          )
-                        : _buildFallbackBannerGraphics(),
-                  ),
-                ),
-
-                // 50% Off badge sticker
-                Positioned(
-                  right: 18,
-                  top: 14,
-                  child: Container(
-                    padding: const EdgeInsets.all(7),
-                    decoration: const BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      '50%\nOFF',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 8.5,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                        height: 1.1,
-                      ),
+                          ),
+                      ],
                     ),
                   ),
                 ),
-              ],
-            ),
+              );
+            },
           ),
+        ),
 
-          const SizedBox(height: 10),
+        const SizedBox(height: 10),
 
-          // Pagination Dots
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 7,
-                height: 7,
-                decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.primary),
+        // Animated Smooth Pagination Dots
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(bannerList.length, (idx) {
+            final isSel = idx == _currentBannerIndex;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              width: isSel ? 20 : 6,
+              height: 6,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(4),
+                color: isSel ? AppColors.primary : const Color(0xFFCBD5E1),
               ),
-              const SizedBox(width: 6),
-              Container(
-                width: 6,
-                height: 6,
-                decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFCBD5E1)),
-              ),
-              const SizedBox(width: 6),
-              Container(
-                width: 6,
-                height: 6,
-                decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFCBD5E1)),
-              ),
-            ],
-          ),
-        ],
-      ),
+            );
+          }),
+        ),
+      ],
     );
   }
 

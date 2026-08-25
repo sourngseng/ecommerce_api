@@ -267,7 +267,28 @@ class ApiService {
     return [];
   }
 
-  // 9. Get Flash Sale Products
+  // 9. Search Products
+  Future<List<ProductModel>> searchProducts(
+    String query, {
+    int? categoryId,
+    String? sortBy,
+    String? sortOrder,
+    double? minPrice,
+    double? maxPrice,
+    int perPage = 30,
+  }) async {
+    return getProducts(
+      search: query,
+      categoryId: categoryId,
+      sortBy: sortBy,
+      sortOrder: sortOrder,
+      minPrice: minPrice,
+      maxPrice: maxPrice,
+      perPage: perPage,
+    );
+  }
+
+  // 10. Get Flash Sale Products
   Future<List<ProductModel>> getFlashSaleProducts() async {
     return getProducts(featured: true, perPage: 6);
   }
