@@ -22,7 +22,7 @@ class ScanSearchScreen extends StatefulWidget {
 }
 
 class _ScanSearchScreenState extends State<ScanSearchScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final ApiService _apiService = ApiService();
   late TabController _tabController;
   late AnimationController _laserAnimController;
