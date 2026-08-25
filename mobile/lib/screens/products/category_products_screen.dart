@@ -5,6 +5,7 @@ import '../../models/category_model.dart';
 import '../../models/product_model.dart';
 import '../../services/api_service.dart';
 import '../cart/cart_screen.dart';
+import '../wishlist/wishlist_screen.dart';
 import 'product_detail_screen.dart';
 
 class CategoryProductsScreen extends StatefulWidget {
@@ -390,7 +391,14 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
             icon: const Icon(Icons.search_rounded, size: 22, color: Color(0xFF1E293B)),
           ),
           IconButton(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const WishlistScreen(showBackButton: true),
+                ),
+              );
+            },
             icon: const Icon(Icons.favorite_border_rounded, size: 22, color: Color(0xFF1E293B)),
           ),
           Stack(

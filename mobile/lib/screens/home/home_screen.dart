@@ -13,6 +13,7 @@ import '../cart/cart_screen.dart';
 import '../categories/categories_screen.dart';
 import '../products/category_products_screen.dart';
 import '../products/product_detail_screen.dart';
+import '../wishlist/wishlist_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -1096,6 +1097,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     if (tabIndex == 2) {
       return const CartScreen();
+    }
+    if (tabIndex == 3) {
+      return const WishlistScreen();
     }
 
     final titles = ['Home', 'All Categories', 'My Shopping Cart', 'My Wishlist', 'My Account'];
