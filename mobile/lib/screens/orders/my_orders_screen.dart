@@ -41,70 +41,6 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
     'Cancelled',
   ];
 
-  // High-fidelity fallback orders matching the visual mockup
-  final List<Map<String, dynamic>> _fallbackSeed = [
-    {
-      'id': 125,
-      'order_number': 'ORD-2024-000125',
-      'created_at': 'May 12, 2024 at 10:30 AM',
-      'status': 'delivered',
-      'status_label': 'Delivered',
-      'status_subtitle': 'Delivered on May 15, 2024',
-      'status_desc': 'Your order has been delivered successfully.',
-      'total': 1299.00,
-      'items_count': 3,
-      'thumbnails': [
-        'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=200&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=200&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200&auto=format&fit=crop&q=80',
-      ],
-      'extra_count': 1,
-    },
-    {
-      'id': 124,
-      'order_number': 'ORD-2024-000124',
-      'created_at': 'May 10, 2024 at 03:15 PM',
-      'status': 'shipped',
-      'status_label': 'Shipped',
-      'status_subtitle': 'In Transit',
-      'status_desc': 'Estimated delivery: May 17, 2024',
-      'total': 249.00,
-      'items_count': 1,
-      'thumbnails': [
-        'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=200&auto=format&fit=crop&q=80',
-      ],
-      'extra_count': 0,
-    },
-    {
-      'id': 123,
-      'order_number': 'ORD-2024-000123',
-      'created_at': 'May 08, 2024 at 11:45 AM',
-      'status': 'processing',
-      'status_label': 'Processing',
-      'status_subtitle': 'Processing',
-      'status_desc': 'We are preparing your order.',
-      'total': 159.00,
-      'items_count': 1,
-      'thumbnails': [
-        'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200&auto=format&fit=crop&q=80',
-      ],
-      'extra_count': 0,
-    },
-    {
-      'id': 122,
-      'order_number': 'ORD-2024-000122',
-      'created_at': 'May 05, 2024 at 09:20 AM',
-      'status': 'cancelled',
-      'status_label': 'Cancelled',
-      'status_subtitle': 'Cancelled',
-      'status_desc': 'This order has been cancelled.',
-      'total': 44.99,
-      'items_count': 1,
-      'thumbnails': [],
-      'extra_count': 0,
-    },
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -128,20 +64,17 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
         status: tabKey == 'all_orders' ? null : tabKey,
       );
 
-      if (mounted && fetched.isNotEmpty) {
+      if (mounted) {
         setState(() {
           _liveOrders = fetched.map((json) => OrderModel.fromJson(json)).toList();
         });
-      } else {
-        // Use realistic seeded models
-        setState(() {
-          _liveOrders = _fallbackSeed.map((json) => OrderModel.fromJson(json)).toList();
-        });
       }
     } catch (_) {
-      setState(() {
-        _liveOrders = _fallbackSeed.map((json) => OrderModel.fromJson(json)).toList();
-      });
+      if (mounted) {
+        setState(() {
+          _liveOrders = [];
+        });
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);

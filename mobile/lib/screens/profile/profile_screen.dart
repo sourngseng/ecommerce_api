@@ -24,17 +24,17 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final ApiService _apiService = ApiService();
 
-  int _ordersCount = 12;
+  int _ordersCount = 0;
   final int _wishlistCount = 8;
   final int _couponsCount = 3;
   final int _rewardPoints = 120;
 
   final Map<String, int> _orderStatusCounts = {
-    'To Pay': 1,
-    'Processing': 2,
-    'Shipped': 1,
-    'Delivered': 6,
-    'Cancelled': 1,
+    'To Pay': 0,
+    'Processing': 0,
+    'Shipped': 0,
+    'Delivered': 0,
+    'Cancelled': 0,
   };
 
   @override
@@ -48,23 +48,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (auth.token != null) {
       try {
         final orders = await _apiService.getMyOrders(auth.token);
-        if (mounted && orders.isNotEmpty) {
+        if (mounted) {
           setState(() {
             _ordersCount = orders.length;
             int toPay = 0, processing = 0, shipped = 0, delivered = 0, cancelled = 0;
             for (var o in orders) {
               final status = (o['status'] ?? '').toString().toLowerCase();
-              if (status.contains('pay') || status.contains('pending')) toPay++;
-              if (status.contains('process')) processing++;
+              if (status.contains('pay') || status.contains('pending') || status.contains('unpaid')) toPay++;
+              if (status.contains('process') || status.contains('confirmed')) processing++;
               if (status.contains('ship')) shipped++;
               if (status.contains('deliver')) delivered++;
               if (status.contains('cancel')) cancelled++;
             }
-            _orderStatusCounts['To Pay'] = toPay > 0 ? toPay : 1;
-            _orderStatusCounts['Processing'] = processing > 0 ? processing : 2;
-            _orderStatusCounts['Shipped'] = shipped > 0 ? shipped : 1;
-            _orderStatusCounts['Delivered'] = delivered > 0 ? delivered : 6;
-            _orderStatusCounts['Cancelled'] = cancelled > 0 ? cancelled : 1;
+            _orderStatusCounts['To Pay'] = toPay;
+            _orderStatusCounts['Processing'] = processing;
+            _orderStatusCounts['Shipped'] = shipped;
+            _orderStatusCounts['Delivered'] = delivered;
+            _orderStatusCounts['Cancelled'] = cancelled;
           });
         }
       } catch (_) {}
