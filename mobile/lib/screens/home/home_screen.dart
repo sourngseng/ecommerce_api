@@ -8,12 +8,12 @@ import '../../models/category_model.dart';
 import '../../models/product_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
-import '../auth/login_screen.dart';
 import '../cart/cart_screen.dart';
 import '../categories/categories_screen.dart';
 import '../orders/my_orders_screen.dart';
 import '../products/category_products_screen.dart';
 import '../products/product_detail_screen.dart';
+import '../profile/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -1101,53 +1101,12 @@ class _HomeScreenState extends State<HomeScreen> {
     if (tabIndex == 3) {
       return const MyOrdersScreen();
     }
+    if (tabIndex == 4) {
+      return ProfileScreen(
+        onNavigateToOrders: () => setState(() => _currentBottomNavIndex = 3),
+      );
+    }
 
-    final titles = ['Home', 'All Categories', 'My Shopping Cart', 'My Wishlist', 'My Account'];
-    final icons = [Icons.home, Icons.grid_view_rounded, Icons.shopping_cart_rounded, Icons.favorite_rounded, Icons.person_rounded];
-
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icons[tabIndex], size: 64, color: AppColors.primary),
-            const SizedBox(height: 16),
-            Text(
-              titles[tabIndex],
-              style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              tabIndex == 4
-                  ? 'Logged in as ${user?.name ?? 'User'} (${user?.role ?? 'Customer'})\nEmail: ${user?.email ?? 'N/A'}'
-                  : 'Connected to live Laravel 12 API backend.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.plusJakartaSans(color: const Color(0xFF64748B), fontSize: 14),
-            ),
-            if (tabIndex == 4) ...[
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFEF4444),
-                  minimumSize: const Size(180, 46),
-                ),
-                onPressed: () async {
-                  final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                  await authProvider.logout();
-                  if (!mounted) return;
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (context) => const LoginScreen()),
-                    (route) => false,
-                  );
-                },
-                icon: const Icon(Icons.logout_rounded, color: Colors.white, size: 18),
-                label: const Text('Logout', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
+    return const SizedBox.shrink();
   }
 }
