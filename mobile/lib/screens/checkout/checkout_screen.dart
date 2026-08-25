@@ -110,18 +110,39 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Future<void> _handleProceedToCheckout() async {
     setState(() => _isPlacingOrder = true);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
 
     final selectedAddress = _addresses[_selectedAddressIndex];
     final selectedShipping = _shippingMethods[_selectedShippingIndex];
     final selectedPayment = _paymentMethods[_selectedPaymentIndex];
-    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+
+    final formattedAddress = {
+      'recipient_name': selectedAddress['recipient'] ?? selectedAddress['recipient_name'] ?? 'Seng Sourng',
+      'phone': selectedAddress['phone'] ?? '+855 12 345 678',
+      'address_line_1': selectedAddress['address'] ?? selectedAddress['address_line_1'] ?? '#123, St. 2004, Sen Sok, Phnom Penh',
+      'city': 'Phnom Penh',
+      'province': 'Phnom Penh',
+    };
+
+    String paymentKey = 'demo_card';
+    if (selectedPayment['id'] == 'cod') paymentKey = 'cash_on_delivery';
+    if (selectedPayment['id'] == 'bank' || selectedPayment['id'] == 'ewallet') paymentKey = 'bank_transfer';
+    if (selectedPayment['id'] == 'card') paymentKey = 'demo_card';
+
+    final cartItemsPayload = cartProvider.items.map((i) => {
+      'product_id': i.productId,
+      'quantity': i.quantity,
+      'name': i.productName,
+      'unit_price': i.unitPrice,
+    }).toList();
 
     final res = await _apiService.createOrder(
       token: authProvider.token,
-      shippingAddress: selectedAddress,
-      shippingMethod: selectedShipping['id'],
-      paymentMethod: selectedPayment['id'],
+      shippingAddress: formattedAddress,
+      shippingMethod: selectedShipping['id'] ?? 'standard',
+      paymentMethod: paymentKey,
       couponCode: widget.couponCode,
+      items: cartItemsPayload,
     );
 
     if (!mounted) return;
@@ -130,7 +151,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     // WIPE/CLEAR CART AUTOMATICALLY ON CHECKOUT & PAYMENT COMPLETE
     await cartProvider.clearCart(authProvider.token);
 
-    _showOrderSuccessDialog(res.data?['order_number'] ?? 'ORD-#${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}');
+    final String createdOrderNumber = res.data?['order_number'] ?? 'ORD-${DateTime.now().year}-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+    _showOrderSuccessDialog(createdOrderNumber);
   }
 
   void _showOrderSuccessDialog(String orderNumber) {

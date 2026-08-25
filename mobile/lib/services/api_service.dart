@@ -420,6 +420,7 @@ class ApiService {
     required String paymentMethod,
     String? couponCode,
     String? notes,
+    List<Map<String, dynamic>>? items,
   }) async {
     try {
       final url = Uri.parse('${ApiConstants.baseUrl}/orders');
@@ -432,6 +433,7 @@ class ApiService {
           'payment_method': paymentMethod,
           'coupon_code': couponCode,
           'notes': notes,
+          if (items != null && items.isNotEmpty) 'items': items,
         }),
       );
 
