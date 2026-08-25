@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../models/cart_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../services/api_service.dart';
+import '../../widgets/product_review_modal.dart';
 import '../orders/my_orders_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
@@ -129,7 +131,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     if (selectedPayment['id'] == 'bank' || selectedPayment['id'] == 'ewallet') paymentKey = 'bank_transfer';
     if (selectedPayment['id'] == 'card') paymentKey = 'demo_card';
 
-    final cartItemsPayload = cartProvider.items.map((i) => {
+    final cartItemsSnapshot = List<CartItemModel>.from(cartProvider.items);
+    final cartItemsPayload = cartItemsSnapshot.map((i) => {
       'product_id': i.productId,
       'quantity': i.quantity,
       'name': i.productName,
@@ -152,10 +155,364 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     await cartProvider.clearCart(authProvider.token);
 
     final String createdOrderNumber = res.data?['order_number'] ?? 'ORD-${DateTime.now().year}-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
-    _showOrderSuccessDialog(createdOrderNumber);
+    _showOrderSuccessDialog(createdOrderNumber, cartItemsSnapshot);
   }
 
-  void _showOrderSuccessDialog(String orderNumber) {
+  void _onPayButtonPressed() {
+    final selectedPayment = _paymentMethods[_selectedPaymentIndex];
+    if (selectedPayment['id'] == 'cod') {
+      _handleProceedToCheckout();
+    } else {
+      _showPaymentConfirmationSheet(selectedPayment);
+    }
+  }
+
+  void _showPaymentConfirmationSheet(Map<String, dynamic> payment) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF1EB),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      payment['badge'] ?? payment['icon'] ?? '💳',
+                      style: const TextStyle(fontSize: 22),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Payment via ${payment['title']}',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF111827),
+                          ),
+                        ),
+                        Text(
+                          payment['subtitle'] ?? 'Secure online gateway',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12,
+                            color: const Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Visual representation according to payment method
+              if (payment['id'] == 'ewallet') ...[
+                // ABA Pay KHQR Card
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF003057),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE31B23),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  'KHQR',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'ABA PAY',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            '\$${_grandTotal.toStringAsFixed(2)}',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          children: [
+                            const Icon(Icons.qr_code_2_rounded, size: 140, color: Color(0xFF003057)),
+                            const SizedBox(height: 4),
+                            Text(
+                              'ECOMMERCE STORE CO., LTD.',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFF1E293B),
+                              ),
+                            ),
+                            Text(
+                              'Scan with ABA Mobile or any Banking App',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 10,
+                                color: const Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ] else if (payment['id'] == 'card') ...[
+                // Credit Card Representation
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: const [
+                      BoxShadow(color: Color(0x2A000000), blurRadius: 10, offset: Offset(0, 4)),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Icon(Icons.credit_card_rounded, color: Colors.white, size: 28),
+                          Row(
+                            children: [
+                              Container(
+                                width: 18,
+                                height: 18,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFEB001B),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              Transform.translate(
+                                offset: const Offset(-6, 0),
+                                child: Container(
+                                  width: 18,
+                                  height: 18,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFF79E1B),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        '••••  ••••  ••••  4242',
+                        style: GoogleFonts.spaceMono(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'CARD HOLDER',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 9,
+                                  color: const Color(0xFF94A3B8),
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              Text(
+                                'SENG SOURNG',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 12,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                'EXPIRES',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 9,
+                                  color: const Color(0xFF94A3B8),
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              Text(
+                                '12/28',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 12,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ] else ...[
+                // Bank Transfer Representation
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Bank Name:', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: const Color(0xFF64748B))),
+                          Text('ABA Bank (USD)', style: GoogleFonts.plusJakartaSans(fontSize: 12.5, fontWeight: FontWeight.w700, color: const Color(0xFF1E293B))),
+                        ],
+                      ),
+                      const Divider(height: 16, color: Color(0xFFE2E8F0)),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Account Number:', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: const Color(0xFF64748B))),
+                          Text('001 234 567', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.primary)),
+                        ],
+                      ),
+                      const Divider(height: 16, color: Color(0xFFE2E8F0)),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Account Name:', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: const Color(0xFF64748B))),
+                          Text('ECOMMERCE STORE LTD', style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF1E293B))),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 20),
+
+              // Pay & Place Order Button
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _handleProceedToCheckout();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 2,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.lock_rounded, color: Colors.white, size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Authorize & Pay \$${_grandTotal.toStringAsFixed(2)}',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  'Cancel',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF64748B),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showOrderSuccessDialog(String orderNumber, List<CartItemModel> purchasedItems) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -190,7 +547,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Thank you for your purchase. Your order $orderNumber has been confirmed.',
+                  'Thank you for your purchase. Your order $orderNumber has been confirmed and paid.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 13,
@@ -229,7 +586,42 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                ElevatedButton(
+
+                // 1. PRIMARY ACTION: Rate & Review Products
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context); // Close success dialog
+                    if (purchasedItems.isNotEmpty) {
+                      _showProductReviewSelector(purchasedItems);
+                    } else {
+                      ProductReviewModal.show(
+                        context,
+                        productId: 1,
+                        productName: 'Purchased Item',
+                        price: _grandTotal,
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.star_rounded, color: Colors.white, size: 20),
+                  label: Text(
+                    'Rate & Review Products',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      fontSize: 14,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF59E0B),
+                    minimumSize: const Size(double.infinity, 48),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 2,
+                  ),
+                ),
+                const SizedBox(height: 10),
+
+                // 2. SECONDARY ACTION: View My Orders
+                OutlinedButton.icon(
                   onPressed: () {
                     Navigator.of(context).popUntil((route) => route.isFirst);
                     Navigator.push(
@@ -239,21 +631,24 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       ),
                     );
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    minimumSize: const Size(double.infinity, 48),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: Text(
+                  icon: const Icon(Icons.inventory_2_outlined, size: 18, color: AppColors.primary),
+                  label: Text(
                     'View My Orders',
                     style: GoogleFonts.plusJakartaSans(
                       fontWeight: FontWeight.w800,
-                      color: Colors.white,
+                      color: AppColors.primary,
                       fontSize: 14,
                     ),
                   ),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                    side: const BorderSide(color: AppColors.primary, width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                 ),
                 const SizedBox(height: 8),
+
+                // 3. TERTIARY ACTION: Continue Shopping
                 TextButton(
                   onPressed: () {
                     Navigator.of(context).popUntil((route) => route.isFirst);
@@ -269,6 +664,163 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
               ],
             ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showProductReviewSelector(List<CartItemModel> items) {
+    if (items.length == 1) {
+      final item = items.first;
+      ProductReviewModal.show(
+        context,
+        productId: item.productId,
+        productName: item.productName,
+        imageUrl: item.imageUrl,
+        price: item.unitPrice,
+        onReviewSubmitted: () {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        },
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Select Product to Review',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF111827),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Choose an item from your recent order to rate:',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12.5,
+                  color: const Color(0xFF64748B),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ...items.map((item) {
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: item.imageUrl != null
+                              ? Image.network(
+                                  item.imageUrl!,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      const Icon(Icons.inventory_2_outlined, color: Colors.grey),
+                                )
+                              : const Icon(Icons.inventory_2_outlined, color: Colors.grey),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.productName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF111827),
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '\$${item.unitPrice.toStringAsFixed(2)} · Qty: ${item.quantity}',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          ProductReviewModal.show(
+                            context,
+                            productId: item.productId,
+                            productName: item.productName,
+                            imageUrl: item.imageUrl,
+                            price: item.unitPrice,
+                            onReviewSubmitted: () {
+                              Navigator.of(context).popUntil((route) => route.isFirst);
+                            },
+                          );
+                        },
+                        icon: const Icon(Icons.star_rounded, size: 16, color: Colors.white),
+                        label: Text(
+                          'Rate',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFF59E0B),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
           ),
         );
       },
@@ -1002,10 +1554,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
           const SizedBox(width: 16),
 
-          // Continue to Review Button
+          // Dynamic Make Payment Button
           Expanded(
             child: ElevatedButton(
-              onPressed: _isPlacingOrder ? null : _handleProceedToCheckout,
+              onPressed: _isPlacingOrder ? null : _onPayButtonPressed,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 minimumSize: const Size(double.infinity, 48),
@@ -1018,16 +1570,30 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   : Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        Icon(
+                          _selectedPaymentIndex == 0
+                              ? Icons.local_shipping_outlined
+                              : (_selectedPaymentIndex == 1
+                                  ? Icons.credit_card_rounded
+                                  : (_selectedPaymentIndex == 3 ? Icons.qr_code_2_rounded : Icons.account_balance_outlined)),
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 6),
                         Text(
-                          'Continue to Review',
+                          _selectedPaymentIndex == 0
+                              ? 'Place Order'
+                              : (_selectedPaymentIndex == 1
+                                  ? 'Pay Now'
+                                  : (_selectedPaymentIndex == 3 ? 'Pay with ABA' : 'Make Payment')),
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 14,
                             fontWeight: FontWeight.w800,
                             color: Colors.white,
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 16),
                       ],
                     ),
             ),

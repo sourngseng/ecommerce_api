@@ -6,6 +6,7 @@ import '../../models/order_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../services/api_service.dart';
+import '../../widgets/product_review_modal.dart';
 import '../cart/cart_screen.dart';
 
 class MyOrdersScreen extends StatefulWidget {
@@ -644,18 +645,40 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
     final String status = order.status;
 
     if (status == 'delivered') {
-      return ElevatedButton.icon(
-        onPressed: () => _handleBuyAgain(order),
-        icon: const Icon(Icons.shopping_bag_outlined, size: 15, color: Colors.white),
-        label: Text(
-          'Buy Again',
-          style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          padding: const EdgeInsets.symmetric(vertical: 8),
-        ),
+      return Row(
+        children: [
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () => _showOrderReviewSelector(order),
+              icon: const Icon(Icons.star_rounded, size: 15, color: Colors.white),
+              label: Text(
+                'Review',
+                style: GoogleFonts.plusJakartaSans(fontSize: 11.5, fontWeight: FontWeight.w800, color: Colors.white),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFF59E0B),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () => _handleBuyAgain(order),
+              icon: const Icon(Icons.shopping_bag_outlined, size: 14, color: Colors.white),
+              label: Text(
+                'Buy Again',
+                style: GoogleFonts.plusJakartaSans(fontSize: 11.5, fontWeight: FontWeight.w800, color: Colors.white),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+            ),
+          ),
+        ],
       );
     } else if (status == 'shipped') {
       return ElevatedButton.icon(
@@ -674,7 +697,44 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
           padding: const EdgeInsets.symmetric(vertical: 8),
         ),
       );
-    } else if (status == 'processing' || status == 'confirmed' || status == 'pending') {
+    } else if (status == 'processing' || status == 'confirmed') {
+      return Row(
+        children: [
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () => _showOrderReviewSelector(order),
+              icon: const Icon(Icons.star_rounded, size: 15, color: Colors.white),
+              label: Text(
+                'Rate Item',
+                style: GoogleFonts.plusJakartaSans(fontSize: 11.5, fontWeight: FontWeight.w800, color: Colors.white),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFF59E0B),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () => _handleCancelOrder(order),
+              icon: const Icon(Icons.close_rounded, size: 14, color: Color(0xFFEF4444)),
+              label: Text(
+                'Cancel',
+                style: GoogleFonts.plusJakartaSans(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFFEF4444)),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFFF1F2),
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+            ),
+          ),
+        ],
+      );
+    } else if (status == 'pending') {
       return ElevatedButton.icon(
         onPressed: () => _handleCancelOrder(order),
         icon: const Icon(Icons.close_rounded, size: 15, color: Color(0xFFEF4444)),
@@ -692,6 +752,162 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
     }
 
     return Container();
+  }
+
+  void _showOrderReviewSelector(OrderModel order) {
+    if (order.items.isEmpty) {
+      ProductReviewModal.show(
+        context,
+        productId: 1,
+        productName: 'Ordered Item',
+        price: order.total,
+      );
+      return;
+    }
+
+    if (order.items.length == 1) {
+      final item = order.items.first;
+      ProductReviewModal.show(
+        context,
+        productId: item.productId,
+        productName: item.productName,
+        imageUrl: item.imageUrl,
+        price: item.unitPrice,
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Rate Products in Order #${order.orderNumber}',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 16.5,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF111827),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Select a product to write your review:',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12,
+                  color: const Color(0xFF64748B),
+                ),
+              ),
+              const SizedBox(height: 14),
+              ...order.items.map((item) {
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: item.imageUrl != null
+                              ? Image.network(
+                                  item.imageUrl!,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      const Icon(Icons.inventory_2_outlined, color: Colors.grey),
+                                )
+                              : const Icon(Icons.inventory_2_outlined, color: Colors.grey),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.productName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF111827),
+                              ),
+                            ),
+                            Text(
+                              '\$${item.unitPrice.toStringAsFixed(2)} · Qty: ${item.quantity}',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          ProductReviewModal.show(
+                            context,
+                            productId: item.productId,
+                            productName: item.productName,
+                            imageUrl: item.imageUrl,
+                            price: item.unitPrice,
+                          );
+                        },
+                        icon: const Icon(Icons.star_rounded, size: 15, color: Colors.white),
+                        label: Text(
+                          'Rate',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 11.5, fontWeight: FontWeight.w800, color: Colors.white),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFF59E0B),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void _showOrderDetailsModal(OrderModel order) {
@@ -739,7 +955,38 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
                 const SizedBox(height: 4),
                 Text('${order.shippingAddress!['recipient_name'] ?? 'Recipient'}\n${order.shippingAddress!['address_line_1'] ?? ''}, ${order.shippingAddress!['city'] ?? 'Phnom Penh'}', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
               ],
-              const SizedBox(height: 20),
+              if (order.items.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                const Divider(),
+                Text('Purchased Items:', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 12)),
+                const SizedBox(height: 6),
+                ...order.items.map((item) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text('${item.productName} (x${item.quantity})', style: const TextStyle(fontSize: 12)),
+                      ),
+                      TextButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          ProductReviewModal.show(
+                            context,
+                            productId: item.productId,
+                            productName: item.productName,
+                            imageUrl: item.imageUrl,
+                            price: item.unitPrice,
+                          );
+                        },
+                        icon: const Icon(Icons.star_rounded, size: 14, color: Color(0xFFF59E0B)),
+                        label: Text('Rate', style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.bold, color: const Color(0xFFF59E0B))),
+                      ),
+                    ],
+                  ),
+                )),
+              ],
+              const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(

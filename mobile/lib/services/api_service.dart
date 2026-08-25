@@ -486,4 +486,39 @@ class ApiService {
     } catch (_) {}
     return false;
   }
+
+  // 22. Submit Product Review & Rating
+  Future<ApiResponse<Map<String, dynamic>>> submitProductReview({
+    required String? token,
+    required int productId,
+    required int rating,
+    String? comment,
+  }) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}/products/$productId/reviews');
+      final response = await _client.post(
+        url,
+        headers: _getHeaders(token),
+        body: jsonEncode({
+          'rating': rating,
+          'comment': comment,
+        }),
+      );
+
+      final Map<String, dynamic> body = jsonDecode(response.body);
+
+      return ApiResponse(
+        success: (response.statusCode == 200 || response.statusCode == 201) && body['success'] == true,
+        message: body['message'] ?? (response.statusCode == 201 ? 'Review submitted successfully!' : 'Failed to submit review'),
+        data: body['data'],
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      return ApiResponse(
+        success: false,
+        message: 'Review submission error: $e',
+        statusCode: 500,
+      );
+    }
+  }
 }

@@ -32,36 +32,31 @@ class ReviewController extends Controller
     {
         $user = $request->user();
 
-        // Check if customer purchased this product
         $purchasedOrder = Order::where('user_id', $user->id)
-            ->whereIn('status', ['delivered', 'shipped', 'confirmed', 'processing'])
+            ->whereIn('status', ['pending', 'processing', 'confirmed', 'shipped', 'delivered'])
             ->whereHas('items', function ($query) use ($product) {
                 $query->where('product_id', $product->id);
             })
+            ->latest()
             ->first();
 
         if (!$purchasedOrder) {
             return $this->error('Only customers who have purchased this product can submit a review.', 403);
         }
 
-        // Check if customer already reviewed this product
-        $existingReview = Review::where('user_id', $user->id)
-            ->where('product_id', $product->id)
-            ->first();
-
-        if ($existingReview) {
-            return $this->error('You have already reviewed this product.', 422);
-        }
-
         $validated = $request->validated();
-        $review = Review::create([
-            'user_id' => $user->id,
-            'product_id' => $product->id,
-            'order_id' => $purchasedOrder->id,
-            'rating' => $validated['rating'],
-            'comment' => $validated['comment'] ?? null,
-            'status' => 'approved',
-        ]);
+        $review = Review::updateOrCreate(
+            [
+                'user_id' => $user->id,
+                'product_id' => $product->id,
+            ],
+            [
+                'order_id' => $purchasedOrder?->id,
+                'rating' => $validated['rating'],
+                'comment' => $validated['comment'] ?? null,
+                'status' => 'approved',
+            ]
+        );
 
         $product->updateRatingStats();
 
